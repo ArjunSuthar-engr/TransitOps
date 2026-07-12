@@ -16,6 +16,10 @@ export default function Dashboard() {
   const [selectedTrip, setSelectedTrip] = useState<any | null>(null);
   const [showStickySearch, setShowStickySearch] = useState(false);
   const [showStickyFilters, setShowStickyFilters] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newPickup, setNewPickup] = useState('');
+  const [newDelivery, setNewDelivery] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { role } = useRole();
 
   useEffect(() => {
@@ -229,6 +233,34 @@ export default function Dashboard() {
     return status.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   };
 
+  const handleCreateTrip = async () => {
+    if (!newPickup || !newDelivery) return;
+    setIsSubmitting(true);
+    try {
+      // Create an unassigned trip. Use dayjs() as the exact creation time.
+      const newTrip = await tripService.create({
+        vehicle_id: null,
+        driver_id: null,
+        start_location: newPickup,
+        end_location: newDelivery,
+        start_time: dayjs().toISOString(),
+        end_time: null,
+        status: 'scheduled'
+      });
+      // Refresh trips
+      const fetchedTrips = await tripService.getDashboardTrips();
+      setTrips(fetchedTrips || []);
+      
+      setNewPickup('');
+      setNewDelivery('');
+      setShowCreateModal(false);
+    } catch (err) {
+      console.error('Failed to create trip:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const FILTERS: { label: string; value: FilterType }[] = [
     { label: 'All', value: 'all' },
     { label: 'Scheduled', value: 'scheduled' },
@@ -309,7 +341,10 @@ export default function Dashboard() {
               </svg>
               Export
             </button>
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-white text-[13px] font-semibold rounded-[14px] hover:bg-brand-primary/90 transition-colors shadow-sm">
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-white text-[13px] font-semibold rounded-[14px] hover:bg-brand-primary/90 transition-colors shadow-sm"
+            >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
               </svg>
@@ -604,6 +639,82 @@ export default function Dashboard() {
             </div>
           </>
         )}
+      </div>
+
+      {/* ── CREATE SHIPMENT MODAL (SLIDE-IN) ── */}
+      {showCreateModal && (
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-40"
+          onClick={() => !isSubmitting && setShowCreateModal(false)}
+        />
+      )}
+      <div
+        className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out ${
+          showCreateModal ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex items-center justify-between px-6 py-5 border-b border-brand-border/40">
+          <div>
+            <p className="text-[11px] font-semibold text-brand-neutral-dark/40 uppercase tracking-wider mb-0.5">New Order</p>
+            <h3 className="text-lg font-display font-bold text-brand-primary">Create Shipment</h3>
+          </div>
+          <button
+            onClick={() => !isSubmitting && setShowCreateModal(false)}
+            className="h-9 w-9 flex items-center justify-center rounded-xl border border-brand-border/60 text-brand-neutral-dark/60 hover:bg-brand-surface transition-colors"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-bold text-brand-primary">Pickup Location</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Warehouse A, Mumbai"
+              value={newPickup}
+              onChange={e => setNewPickup(e.target.value)}
+              className="w-full px-4 py-3 bg-brand-surface border border-brand-border/60 rounded-xl focus:outline-none text-sm font-semibold text-brand-primary placeholder:text-brand-neutral-dark/40 placeholder:font-normal"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-bold text-brand-primary">Delivery Location</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Distribution Center, Pune"
+              value={newDelivery}
+              onChange={e => setNewDelivery(e.target.value)}
+              className="w-full px-4 py-3 bg-brand-surface border border-brand-border/60 rounded-xl focus:outline-none text-sm font-semibold text-brand-primary placeholder:text-brand-neutral-dark/40 placeholder:font-normal"
+            />
+          </div>
+          <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 flex gap-3 mt-2">
+            <svg className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-xs font-medium text-blue-800 leading-relaxed">
+              This shipment will be created as "Scheduled" without an assigned driver or vehicle. You can assign resources from the trip details panel later.
+            </p>
+          </div>
+        </div>
+
+        <div className="px-6 py-4 border-t border-brand-border/40 flex gap-3">
+          <button
+            onClick={() => setShowCreateModal(false)}
+            disabled={isSubmitting}
+            className="flex-1 py-3 rounded-2xl bg-white border border-brand-border/60 text-brand-primary text-sm font-semibold hover:bg-brand-surface transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreateTrip}
+            disabled={isSubmitting || !newPickup || !newDelivery}
+            className="flex-1 py-3 rounded-2xl bg-brand-primary text-white text-sm font-semibold hover:bg-brand-primary/90 transition-colors disabled:opacity-50"
+          >
+            {isSubmitting ? 'Creating...' : 'Create Order'}
+          </button>
+        </div>
       </div>
     </div>
   );
