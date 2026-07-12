@@ -1,22 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { tripService } from '@/services/tripService';
 import { expenseService } from '@/services/expenseService';
 
+type FilterType = 'all' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 
 export default function Dashboard() {
   const [trips, setTrips] = useState<any[]>([]);
   const [totalExpenses, setTotalExpenses] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTrip, setSelectedTrip] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       setIsLoading(true);
       try {
-        // Fetch trips with driver join
         const fetchedTrips = await tripService.getDashboardTrips();
         setTrips(fetchedTrips || []);
-
-        // Fetch expenses to calculate total
         const expenses = await expenseService.getAll();
         const total = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
         setTotalExpenses(total);
@@ -26,28 +27,37 @@ export default function Dashboard() {
         setIsLoading(false);
       }
     };
-
     fetchDashboardData();
   }, []);
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
+  const filteredTrips = useMemo(() => {
+    let list = trips;
+    if (activeFilter !== 'all') {
+      list = list.filter(t => t.status === activeFilter);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(t =>
+        (t.id && t.id.toLowerCase().includes(q)) ||
+        (t.start_location && t.start_location.toLowerCase().includes(q)) ||
+        (t.end_location && t.end_location.toLowerCase().includes(q)) ||
+        (t.driver && `${t.driver.first_name} ${t.driver.last_name}`.toLowerCase().includes(q))
+      );
+    }
+    return list;
+  }, [trips, activeFilter, searchQuery]);
 
-  // Format date safely
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+    return new Date(dateString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  const formatDateTime = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
   const getStatusColor = (status: string) => {
@@ -55,38 +65,51 @@ export default function Dashboard() {
       case 'completed': return 'bg-green-500';
       case 'in_progress': return 'bg-blue-500';
       case 'cancelled': return 'bg-red-500';
-      case 'scheduled': default: return 'bg-orange-500';
+      default: return 'bg-orange-500';
+    }
+  };
+
+  const getStatusBadgeStyle = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-50 text-green-700 border-green-200';
+      case 'in_progress': return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'cancelled': return 'bg-red-50 text-red-700 border-red-200';
+      default: return 'bg-orange-50 text-orange-700 border-orange-200';
     }
   };
 
   const getStatusLabel = (status: string) => {
     if (!status) return 'Unknown';
-    return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    return status.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   };
+
+  const FILTERS: { label: string; value: FilterType }[] = [
+    { label: 'All', value: 'all' },
+    { label: 'Scheduled', value: 'scheduled' },
+    { label: 'In Progress', value: 'in_progress' },
+    { label: 'Completed', value: 'completed' },
+  ];
 
   return (
     <div className="flex flex-col gap-8 w-full pb-10 font-sans">
-      
-      {/* -------------------------------------------------------------
-          MAIN TOP HERO SECTION (Matches Reference Image) 
-          ------------------------------------------------------------- */}
+
+      {/* ── TOP HERO SECTION ── */}
       <div className="w-full rounded-[2rem] bg-[#F1F6F3] p-6 lg:p-8 relative shadow-sm border border-brand-border/30">
-        
-        {/* TOP ROW: Search & Actions */}
+
+        {/* Search & Actions */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
-          {/* Search */}
           <div className="relative w-full sm:max-w-xs flex items-center">
             <svg className="absolute left-0 h-4.5 w-4.5 text-brand-neutral-dark/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <input 
-              type="text" 
-              placeholder="Search order..." 
+            <input
+              type="text"
+              placeholder="Search order..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-7 pr-4 py-1.5 bg-transparent focus:outline-none text-sm font-sans placeholder:text-brand-neutral-dark/50 text-brand-primary"
             />
           </div>
-          
-          {/* Actions */}
           <div className="flex items-center gap-3 sm:gap-5">
             <button className="flex items-center gap-2 text-[13px] font-semibold text-brand-primary hover:opacity-70 transition-opacity">
               <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -103,9 +126,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* MIDDLE ROW: Graphs Container */}
+        {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
-          
+
           {/* LEFT: Fulfillment Performance */}
           <div className="flex flex-col">
             <div className="flex justify-between items-center mb-8">
@@ -123,25 +146,16 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
-            
             <div className="relative h-48 w-full flex items-end justify-between px-2">
-              {/* Grid lines & labels */}
               <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
                 <div className="w-full flex justify-end"><span className="text-[10px] text-brand-neutral-dark/40 font-semibold transform -translate-y-1/2">100%</span></div>
                 <div className="w-full border-t border-brand-border/50 border-dashed flex justify-end"><span className="text-[10px] text-brand-neutral-dark/40 font-semibold transform -translate-y-1/2 bg-[#F1F6F3] pl-2">50%</span></div>
                 <div className="w-full border-t border-brand-border/50 flex justify-end"><span className="text-[10px] text-brand-neutral-dark/40 font-semibold transform -translate-y-1/2 bg-[#F1F6F3] pl-2">0%</span></div>
               </div>
-
-              {/* Bars Mock */}
               {[40, 60, 45, 75, 45, 25, 95, 50, 65, 40, 20, 30, 45, 55, 90, 50, 40].map((h, i) => (
                 <div key={i} className="relative flex flex-col items-center group w-4">
-                  {i === 6 && (
-                     <span className="absolute -top-7 text-[11px] font-bold text-brand-primary whitespace-nowrap">Today</span>
-                  )}
-                  <div 
-                    className={`w-full rounded-sm ${i === 6 ? 'bg-brand-primary' : 'bg-gradient-to-t from-brand-border/10 to-brand-border/80'}`} 
-                    style={{ height: `${h}%` }}
-                  >
+                  {i === 6 && <span className="absolute -top-7 text-[11px] font-bold text-brand-primary whitespace-nowrap">Today</span>}
+                  <div className={`w-full rounded-sm ${i === 6 ? 'bg-brand-primary' : 'bg-gradient-to-t from-brand-border/10 to-brand-border/80'}`} style={{ height: `${h}%` }}>
                     {i !== 6 && <div className="h-0.5 w-full bg-brand-neutral-dark/60 rounded-t-sm" />}
                   </div>
                 </div>
@@ -149,7 +163,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* RIGHT: Total Expenses Overview */}
+          {/* RIGHT: Total Expenses */}
           <div className="flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-base font-sans font-medium text-brand-primary">Total Expenses</h3>
@@ -166,19 +180,13 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
-            
             <div className="flex items-end gap-3 mb-6">
               <span className="text-[40px] font-sans font-medium text-brand-primary tracking-tight leading-none">
                 {isLoading ? '₹...' : formatCurrency(totalExpenses)}
               </span>
-              <span className="inline-flex items-center gap-0.5 mb-1.5 px-2 py-0.5 rounded-[6px] bg-white border border-brand-border/60 text-[10px] font-bold text-brand-neutral-dark/50 shadow-sm">
-                Live Data
-              </span>
+              <span className="inline-flex items-center gap-0.5 mb-1.5 px-2 py-0.5 rounded-[6px] bg-white border border-brand-border/60 text-[10px] font-bold text-brand-neutral-dark/50 shadow-sm">Live Data</span>
             </div>
-
-            {/* Sankey / Stacked Chart Mock for UI Aesthetics */}
             <div className="relative h-[110px] w-full flex items-end justify-between">
-              {/* Column 1 */}
               <div className="flex flex-col gap-1 w-1/4 h-full justify-end relative z-10">
                 <span className="text-[10px] font-bold text-brand-primary mb-1">Fuel</span>
                 <div className="h-3 bg-brand-neutral-dark/30 rounded-md w-full" />
@@ -186,15 +194,9 @@ export default function Dashboard() {
                 <div className="h-7 bg-brand-neutral-dark/70 rounded-md w-full" />
                 <div className="h-4 bg-brand-primary rounded-md w-full" />
               </div>
-
-              {/* Connector Polygons 1 to 2 */}
               <div className="absolute left-[25%] w-[12.5%] h-full">
-                <svg className="w-full h-full opacity-10" preserveAspectRatio="none">
-                  <polygon points="0,45 100,65 100,110 0,110" fill="currentColor" />
-                </svg>
+                <svg className="w-full h-full opacity-10" preserveAspectRatio="none"><polygon points="0,45 100,65 100,110 0,110" fill="currentColor" /></svg>
               </div>
-
-              {/* Column 2 */}
               <div className="flex flex-col gap-1 w-1/4 h-[80%] justify-end relative z-10">
                 <span className="text-[10px] font-bold text-brand-primary mb-1 text-center">Maintenance</span>
                 <div className="h-2 bg-brand-neutral-dark/30 rounded-md w-full" />
@@ -202,15 +204,9 @@ export default function Dashboard() {
                 <div className="h-5 bg-brand-neutral-dark/70 rounded-md w-full" />
                 <div className="h-3 bg-brand-primary rounded-md w-full" />
               </div>
-
-              {/* Connector Polygons 2 to 3 */}
               <div className="absolute left-[62.5%] w-[12.5%] h-full">
-                <svg className="w-full h-full opacity-10" preserveAspectRatio="none">
-                  <polygon points="0,65 100,10 100,110 0,110" fill="currentColor" />
-                </svg>
+                <svg className="w-full h-full opacity-10" preserveAspectRatio="none"><polygon points="0,65 100,10 100,110 0,110" fill="currentColor" /></svg>
               </div>
-
-              {/* Column 3 */}
               <div className="flex flex-col gap-1 w-1/4 h-[110%] justify-end relative z-10 transform translate-y-2">
                 <span className="text-[10px] font-bold text-brand-primary mb-1 text-right">Other</span>
                 <div className="h-5 bg-brand-neutral-dark/30 rounded-md w-full" />
@@ -219,8 +215,6 @@ export default function Dashboard() {
                 <div className="h-6 bg-brand-primary rounded-md w-full" />
               </div>
             </div>
-
-            {/* Legend */}
             <div className="flex justify-center items-center gap-4 mt-6 text-[10px] font-semibold text-brand-primary">
               <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-primary" />Q1</div>
               <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-neutral-dark/70" />Q2</div>
@@ -228,67 +222,64 @@ export default function Dashboard() {
               <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-neutral-dark/30" />Q4</div>
             </div>
           </div>
-
         </div>
       </div>
 
-
-      {/* -------------------------------------------------------------
-          BOTTOM ORDERS SECTION
-          ------------------------------------------------------------- */}
+      {/* ── LIVE ORDERS SECTION ── */}
       <div className="w-full">
-        {/* Table Header Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 px-2">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-sans font-medium text-brand-primary">Live Orders</h2>
             <span className="px-2.5 py-1 rounded-lg bg-white border border-brand-border/60 text-xs font-bold text-brand-neutral-dark/70 shadow-sm">
-              {trips.length}
+              {filteredTrips.length}
             </span>
           </div>
-          
           <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
-            <button className="px-4 py-2 rounded-xl bg-brand-primary text-[13px] font-semibold text-white shadow-sm whitespace-nowrap hover:bg-brand-primary/90">All</button>
-            <button className="px-4 py-2 rounded-xl bg-white border border-brand-border/60 text-[13px] font-semibold text-brand-neutral-dark/80 shadow-sm whitespace-nowrap hover:bg-brand-surface">Scheduled</button>
-            <button className="px-4 py-2 rounded-xl bg-white border border-brand-border/60 text-[13px] font-semibold text-brand-neutral-dark/80 shadow-sm whitespace-nowrap hover:bg-brand-surface">In Progress</button>
-            <button className="px-4 py-2 rounded-xl bg-white border border-brand-border/60 text-[13px] font-semibold text-brand-neutral-dark/80 shadow-sm whitespace-nowrap hover:bg-brand-surface">Completed</button>
-            <button className="px-3 py-2 rounded-xl bg-white border border-brand-border/60 text-brand-primary shadow-sm hover:bg-brand-surface ml-1">
-              <svg className="h-4 w-4 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-              </svg>
-            </button>
+            {FILTERS.map(f => (
+              <button
+                key={f.value}
+                onClick={() => setActiveFilter(f.value)}
+                className={`px-4 py-2 rounded-xl text-[13px] font-semibold shadow-sm whitespace-nowrap transition-colors ${
+                  activeFilter === f.value
+                    ? 'bg-brand-primary text-white'
+                    : 'bg-white border border-brand-border/60 text-brand-neutral-dark/80 hover:bg-brand-surface'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Custom List Rows matching the image */}
         <div className="flex flex-col gap-2">
-          {/* List Header */}
           <div className="grid grid-cols-6 gap-4 px-6 py-2 text-[11px] font-semibold text-brand-neutral-dark/50">
             <div>Order ID</div>
-            <div>Order assigned to</div>
-            <div>Pickup address</div>
-            <div>Delivery address</div>
+            <div>Assigned to</div>
+            <div>Pickup</div>
+            <div>Delivery</div>
             <div>Est. delivery</div>
             <div>Status</div>
           </div>
-          
-          {/* List Items */}
+
           {isLoading ? (
             <div className="text-center py-10 text-sm font-semibold text-brand-neutral-dark/50">Loading orders from database...</div>
-          ) : trips.length === 0 ? (
-            <div className="text-center py-10 text-sm font-semibold text-brand-neutral-dark/50">No orders found.</div>
+          ) : filteredTrips.length === 0 ? (
+            <div className="text-center py-10 text-sm font-semibold text-brand-neutral-dark/50">
+              {searchQuery ? `No orders match "${searchQuery}"` : 'No orders found.'}
+            </div>
           ) : (
-            trips.map((order) => (
+            filteredTrips.map((order) => (
               <div key={order.id} className="grid grid-cols-6 items-center gap-4 px-6 py-4 bg-white rounded-2xl shadow-sm border border-brand-border/30 hover:border-brand-border transition-colors">
-                <div className="text-[13px] font-bold text-brand-primary truncate" title={order.id}>{order.id ? order.id.split('-')[0].toUpperCase() : 'N/A'}</div>
+                <div className="text-[13px] font-bold text-brand-primary truncate">{order.id ? order.id.split('-')[0].toUpperCase() : 'N/A'}</div>
                 <div className="text-[13px] font-semibold text-brand-primary truncate">
                   {order.driver ? `${order.driver.first_name} ${order.driver.last_name}` : 'Unassigned'}
                 </div>
                 <div className="text-[13px] font-semibold text-brand-primary flex items-center gap-2 truncate">
-                  <div className="w-4 h-4 rounded-full bg-brand-surface border border-brand-border/60 overflow-hidden flex-shrink-0" />
+                  <div className="w-4 h-4 rounded-full bg-brand-surface border border-brand-border/60 flex-shrink-0" />
                   <span className="truncate">{order.start_location}</span>
                 </div>
                 <div className="text-[13px] font-semibold text-brand-primary flex items-center gap-2 truncate">
-                  <div className="w-4 h-4 rounded-full bg-brand-surface border border-brand-border/60 overflow-hidden flex-shrink-0" />
+                  <div className="w-4 h-4 rounded-full bg-brand-surface border border-brand-border/60 flex-shrink-0" />
                   <span className="truncate">{order.end_location}</span>
                 </div>
                 <div className="text-[13px] font-semibold text-brand-primary">{formatDate(order.end_time || order.start_time)}</div>
@@ -297,19 +288,124 @@ export default function Dashboard() {
                     <div className={`w-1.5 h-1.5 flex-shrink-0 rounded-full ${getStatusColor(order.status)}`} />
                     <span className="text-[13px] font-semibold text-brand-primary truncate">{getStatusLabel(order.status)}</span>
                   </div>
-                  <div className="flex gap-1.5 ml-2">
-                    <button className="px-3 py-1.5 rounded-lg bg-white border border-brand-border/60 text-[11px] font-semibold text-brand-primary hover:bg-brand-surface shadow-sm whitespace-nowrap">See more</button>
-                    <button className="px-2 py-1.5 rounded-lg bg-white border border-brand-border/60 text-brand-primary hover:bg-brand-surface shadow-sm flex items-center justify-center">
-                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                      </svg>
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => setSelectedTrip(order)}
+                    className="px-3 py-1.5 rounded-lg bg-white border border-brand-border/60 text-[11px] font-semibold text-brand-primary hover:bg-brand-surface shadow-sm whitespace-nowrap ml-2"
+                  >
+                    See more
+                  </button>
                 </div>
               </div>
             ))
           )}
         </div>
+      </div>
+
+      {/* ── SLIDE-IN DETAIL PANEL ── */}
+      {selectedTrip && (
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-40"
+          onClick={() => setSelectedTrip(null)}
+        />
+      )}
+      <div
+        className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out ${
+          selectedTrip ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        {selectedTrip && (
+          <>
+            <div className="flex items-center justify-between px-6 py-5 border-b border-brand-border/40">
+              <div>
+                <p className="text-[11px] font-semibold text-brand-neutral-dark/40 uppercase tracking-wider mb-0.5">Trip Details</p>
+                <h3 className="text-lg font-display font-bold text-brand-primary">
+                  {selectedTrip.id ? selectedTrip.id.split('-')[0].toUpperCase() : 'N/A'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedTrip(null)}
+                className="h-9 w-9 flex items-center justify-center rounded-xl border border-brand-border/60 text-brand-neutral-dark/60 hover:bg-brand-surface transition-colors"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-5">
+              <span className={`inline-flex items-center gap-2 self-start px-3 py-1.5 rounded-xl border text-xs font-bold ${getStatusBadgeStyle(selectedTrip.status)}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${getStatusColor(selectedTrip.status)}`} />
+                {getStatusLabel(selectedTrip.status)}
+              </span>
+
+              <div className="rounded-2xl border border-brand-border/40 p-4">
+                <p className="text-[10px] font-semibold text-brand-neutral-dark/40 uppercase tracking-wider mb-2">Assigned Driver</p>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedTrip.driver?.first_name || 'Unknown'}&backgroundColor=e2e8f0`}
+                    alt="Driver"
+                    className="h-10 w-10 rounded-full border border-brand-border/60 bg-brand-surface"
+                  />
+                  <div>
+                    <p className="text-sm font-bold text-brand-primary">
+                      {selectedTrip.driver ? `${selectedTrip.driver.first_name} ${selectedTrip.driver.last_name}` : 'Unassigned'}
+                    </p>
+                    <p className="text-[11px] text-brand-neutral-dark/50">Driver</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-brand-border/40 p-4 flex flex-col gap-3">
+                <p className="text-[10px] font-semibold text-brand-neutral-dark/40 uppercase tracking-wider">Route</p>
+                <div className="flex items-start gap-3">
+                  <div className="flex flex-col items-center pt-1">
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                    <div className="w-0.5 h-8 bg-brand-border/60 my-1" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-brand-primary" />
+                  </div>
+                  <div className="flex flex-col gap-3 flex-1">
+                    <div>
+                      <p className="text-[10px] text-brand-neutral-dark/40 font-medium">Pickup</p>
+                      <p className="text-sm font-semibold text-brand-primary">{selectedTrip.start_location}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-brand-neutral-dark/40 font-medium">Delivery</p>
+                      <p className="text-sm font-semibold text-brand-primary">{selectedTrip.end_location}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl border border-brand-border/40 p-4">
+                  <p className="text-[10px] font-semibold text-brand-neutral-dark/40 uppercase tracking-wider mb-1">Departure</p>
+                  <p className="text-sm font-bold text-brand-primary">{formatDateTime(selectedTrip.start_time)}</p>
+                </div>
+                <div className="rounded-2xl border border-brand-border/40 p-4">
+                  <p className="text-[10px] font-semibold text-brand-neutral-dark/40 uppercase tracking-wider mb-1">Est. Arrival</p>
+                  <p className="text-sm font-bold text-brand-primary">{formatDateTime(selectedTrip.end_time || '')}</p>
+                </div>
+              </div>
+
+              {selectedTrip.vehicle && (
+                <div className="rounded-2xl border border-brand-border/40 p-4">
+                  <p className="text-[10px] font-semibold text-brand-neutral-dark/40 uppercase tracking-wider mb-2">Vehicle</p>
+                  <p className="text-sm font-bold text-brand-primary">{selectedTrip.vehicle.make} {selectedTrip.vehicle.model}</p>
+                  <p className="text-[11px] text-brand-neutral-dark/50 mt-0.5">{selectedTrip.vehicle.registration_number}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 border-t border-brand-border/40">
+              <button
+                onClick={() => setSelectedTrip(null)}
+                className="w-full py-3 rounded-2xl bg-brand-primary text-white text-sm font-semibold hover:bg-brand-primary/90 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
