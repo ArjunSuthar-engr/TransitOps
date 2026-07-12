@@ -256,7 +256,7 @@ export default function Dashboard() {
     setIsSubmitting(true);
     try {
       // Create an unassigned trip. Use dayjs() as the exact creation time.
-      const newTrip = await tripService.create({
+      await tripService.create({
         vehicle_id: null,
         driver_id: null,
         start_location: newPickup,
@@ -395,67 +395,89 @@ export default function Dashboard() {
               </svg>
               Export
             </button>
-            <div className="relative">
-              <button 
-                onClick={() => setShowCreateModal(!showCreateModal)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-white text-[13px] font-semibold rounded-[14px] hover:bg-brand-primary/90 transition-colors shadow-sm"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                </svg>
-                Add new shipment
-              </button>
-
+            <div className="relative w-[172px] h-[40px]">
               {showCreateModal && (
-                <>
-                  {/* Invisible backdrop to dismiss popup when clicking outside */}
-                  <div className="fixed inset-0 z-40" onClick={() => setShowCreateModal(false)} />
-                  
-                  {/* Inline absolute popup */}
-                  <div className="absolute right-0 top-full mt-2 w-[320px] bg-[#0C0D0D] rounded-2xl shadow-2xl border border-white/10 overflow-hidden z-50 text-white animate-in fade-in zoom-in-95 origin-top-right duration-200">
-                    <div className="px-5 py-5 flex flex-col gap-4">
-                      <div>
-                        <h4 className="text-[14px] font-bold text-white mb-1">Create Shipment</h4>
-                        <p className="text-[11px] text-white/50 font-medium leading-tight">
-                          The order will be scheduled instantly. Resources can be assigned later.
-                        </p>
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-bold text-white/70">Pickup Location</label>
-                        <input 
-                          type="text" 
-                          list="locations"
-                          placeholder="e.g. Warehouse A"
-                          value={newPickup}
-                          onChange={e => setNewPickup(e.target.value)}
-                          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:border-white/40 text-xs font-semibold text-white placeholder:text-white/30"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-bold text-white/70">Delivery Location</label>
-                        <input 
-                          type="text" 
-                          list="locations"
-                          placeholder="e.g. Pune Hub"
-                          value={newDelivery}
-                          onChange={e => setNewDelivery(e.target.value)}
-                          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:border-white/40 text-xs font-semibold text-white placeholder:text-white/30"
-                        />
-                      </div>
-
-                      <button
-                        onClick={handleCreateTrip}
-                        disabled={isSubmitting || !newPickup || !newDelivery}
-                        className="mt-2 w-full py-2.5 rounded-xl bg-white text-brand-primary text-[13px] font-bold hover:bg-gray-100 transition-colors disabled:opacity-50"
-                      >
-                        {isSubmitting ? 'Creating...' : 'Create Order'}
-                      </button>
-                    </div>
-                  </div>
-                </>
+                <div className="fixed inset-0 z-40" onClick={() => setShowCreateModal(false)} />
               )}
+              
+              <div 
+                className={`absolute right-0 top-0 bg-[#0C0D0D] text-white overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-50 ${
+                  showCreateModal 
+                    ? 'w-[320px] h-[340px] rounded-2xl border border-white/10 shadow-2xl cursor-default' 
+                    : 'w-[172px] h-[40px] rounded-[14px] cursor-pointer hover:bg-black shadow-sm'
+                }`}
+                onClick={() => {
+                  if (!showCreateModal) setShowCreateModal(true);
+                }}
+              >
+                {/* Button State */}
+                <div 
+                  className={`absolute inset-0 flex items-center justify-center gap-2 px-5 transition-opacity duration-300 ${
+                    showCreateModal ? 'opacity-0 pointer-events-none' : 'opacity-100 delay-200'
+                  }`}
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span className="text-[13px] font-semibold whitespace-nowrap">Add new shipment</span>
+                </div>
+
+                {/* Form State */}
+                <div 
+                  className={`absolute top-0 right-0 w-[320px] p-5 flex flex-col gap-4 transition-opacity duration-500 ${
+                    showCreateModal ? 'opacity-100 delay-150' : 'opacity-0 pointer-events-none'
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="text-[14px] font-bold text-white mb-1">Create Shipment</h4>
+                      <p className="text-[11px] text-white/50 font-medium leading-tight">
+                        The order will be scheduled instantly.
+                      </p>
+                    </div>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setShowCreateModal(false); }} 
+                      className="text-white/40 hover:text-white transition-colors mt-0.5"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-white/70">Pickup Location</label>
+                    <input 
+                      type="text" 
+                      list="locations"
+                      placeholder="e.g. Warehouse A"
+                      value={newPickup}
+                      onChange={e => setNewPickup(e.target.value)}
+                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:border-white/40 text-xs font-semibold text-white placeholder:text-white/30"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-white/70">Delivery Location</label>
+                    <input 
+                      type="text" 
+                      list="locations"
+                      placeholder="e.g. Pune Hub"
+                      value={newDelivery}
+                      onChange={e => setNewDelivery(e.target.value)}
+                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:border-white/40 text-xs font-semibold text-white placeholder:text-white/30"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleCreateTrip}
+                    disabled={isSubmitting || !newPickup || !newDelivery}
+                    className="mt-2 w-full py-2.5 rounded-xl bg-white text-[#0C0D0D] text-[13px] font-bold hover:bg-gray-200 transition-colors disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Creating...' : 'Create Order'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
