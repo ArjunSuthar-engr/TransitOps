@@ -1,83 +1,55 @@
-import { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Outlet } from 'react-router-dom';
 import { Sidebar } from '@/components/layout/Sidebar';
-import { TopNavbar } from '@/components/layout/TopNavbar';
 
 export function AppLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const location = useLocation();
+
+  useEffect(() => {
+    // Ensure dark mode class is stripped from HTML to lock layout in light theme
+    document.documentElement.classList.remove('dark');
+  }, []);
 
   const handleToggleMobile = () => {
     setIsMobileOpen(!isMobileOpen);
   };
 
-  const getPageTitle = (pathname: string) => {
-    switch (pathname) {
-      case '/dashboard':
-        return 'Dashboard Overview';
-      case '/vehicles':
-        return 'Vehicles Fleet';
-      case '/drivers':
-        return 'Drivers Registry';
-      case '/trips':
-        return 'Trips Dispatch';
-      case '/maintenance':
-        return 'Maintenance Logs';
-      case '/fuel':
-        return 'Fuel Tracking';
-      case '/expenses':
-        return 'Operational Expenses';
-      case '/reports':
-        return 'Reports & Analytics';
-      case '/settings':
-        return 'Settings Configuration';
-      default:
-        return 'TransitOps';
-    }
-  };
-
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors">
-      {/* Desktop Sidebar (visible on md and up) */}
-      <div className="hidden md:flex md:flex-shrink-0 h-full">
+    <div className="flex h-screen w-screen overflow-hidden bg-white transition-colors font-sans">
+      {/* Desktop Sidebar (Fixed Width, Blended) */}
+      <div className="hidden md:flex h-full w-[260px] flex-shrink-0 z-50">
         <Sidebar />
       </div>
 
       {/* Mobile Sidebar Overlay Drawer */}
       {isMobileOpen && (
         <div className="fixed inset-0 z-40 flex md:hidden">
-          {/* Backdrop overlay */}
           <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            className="fixed inset-0 bg-brand-primary/15 transition-opacity animate-in fade-in duration-150"
             onClick={() => setIsMobileOpen(false)}
           />
-          {/* Drawer content */}
-          <div className="relative flex w-full max-w-xs flex-1 flex-col bg-white dark:bg-slate-950 animate-in slide-in-from-left duration-200">
-            {/* Close button in drawer header */}
-            <div className="absolute top-3 right-3 z-50">
-              <button
-                type="button"
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-850 cursor-pointer"
-                onClick={() => setIsMobileOpen(false)}
-              >
-                <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+          <div className="relative flex h-full">
+            <div className="w-[260px] h-full bg-white">
+              <Sidebar onCloseMobile={() => setIsMobileOpen(false)} />
             </div>
-            <Sidebar onCloseMobile={() => setIsMobileOpen(false)} />
           </div>
         </div>
       )}
 
-      {/* Right Content Area */}
-      <div className="flex flex-1 flex-col overflow-hidden h-full">
-        {/* Top Navbar */}
-        <TopNavbar onMenuToggle={handleToggleMobile} title={getPageTitle(location.pathname)} />
+      {/* Right Content Viewport Frame */}
+      <div className="flex flex-1 flex-col overflow-hidden h-full relative">
+        <button
+          onClick={handleToggleMobile}
+          className="fixed top-4 left-4 z-30 flex p-2.5 rounded-xl border border-brand-border bg-white md:hidden shadow-sm text-brand-primary cursor-pointer hover:bg-brand-surface transition-colors"
+          aria-label="Toggle navigation menu"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
 
-        {/* Dynamic Content Main View */}
-        <main className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-slate-900/40 p-5 md:p-6.5">
-          <div className="mx-auto max-w-6.5xl">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pt-20 md:pt-6 bg-white">
+          <div className="mx-auto max-w-[1400px] h-full">
             <Outlet />
           </div>
         </main>
@@ -85,3 +57,4 @@ export function AppLayout() {
     </div>
   );
 }
+export default AppLayout;

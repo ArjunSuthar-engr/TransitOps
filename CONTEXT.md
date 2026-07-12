@@ -26,6 +26,7 @@ Supabase (Auth + PostgreSQL + RLS)
 - [x] Dependency Installation (Tailwind CSS v4, React Router DOM, Supabase JS, TypeScript)
 - [x] TS Path Aliases Config (`@/*` mapping to `src/*`)
 - [x] Team Documentation (`docs/TEAM_GUIDE.md`, `docs/EXECUTION_PLAN.md`, `AGENTS.md`)
+- [x] Premium Monochromatic Design System Overhaul (Host Grotesk, `@fontsource` packages, centralized tokens)
 
 *Application functional modules (Pending Phase 1+)*:
 - [x] Supabase Database Schema & Seeding

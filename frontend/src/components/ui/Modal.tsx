@@ -37,24 +37,24 @@ export function Modal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
+      {/* Backdrop overlay (flat neutral, no blur to avoid glassmorphism) */}
       <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-brand-primary/20 dark:bg-slate-950/60 transition-opacity"
         onClick={onClose}
       />
       
-      {/* Modal Card */}
+      {/* Modal Container */}
       <div
-        className={`relative w-full max-w-lg bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-900 rounded-xl shadow-lg flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${className}`}
+        className={`relative w-full max-w-lg bg-brand-card dark:bg-slate-950 border border-brand-border dark:border-slate-900 rounded-2xl shadow-lg flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-98 duration-150 ${className}`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-55 dark:border-slate-900">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-brand-border/60 dark:border-slate-900">
+          <h3 className="text-sm font-display font-semibold text-brand-primary dark:text-white">
             {title}
           </h3>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 transition-colors p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
+            className="text-slate-400 hover:text-brand-primary dark:hover:text-slate-300 transition-colors p-1.5 rounded-lg hover:bg-brand-surface dark:hover:bg-slate-900 cursor-pointer focus-visible:ring-2 focus-visible:ring-brand-primary"
             aria-label="Close modal"
           >
             <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -64,13 +64,13 @@ export function Modal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 text-sm text-slate-650 dark:text-slate-400">
+        <div className="flex-1 overflow-y-auto px-6 py-5 text-sm text-brand-neutral-dark/95 dark:text-slate-400">
           {children}
         </div>
 
         {/* Footer */}
         {footer ? (
-          <div className="px-6 py-4 border-t border-slate-50 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-950 flex items-center justify-end gap-3">
+          <div className="px-6 py-4.5 border-t border-brand-border/60 dark:border-slate-900 bg-brand-surface/40 dark:bg-slate-950 flex items-center justify-end gap-3">
             {footer}
           </div>
         ) : null}
