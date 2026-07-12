@@ -12,6 +12,17 @@ export default function Expenses() {
   const [isOpen, setIsOpen] = useState(false);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+
+  const filteredExpenses = expenses.filter(expense => {
+    const matchesSearch = !searchQuery || 
+                          (expense.description && expense.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                          (expense.type && expense.type.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const matchesCategory = !categoryFilter || expense.type === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
 
   useEffect(() => {
     const fetchExpenses = async () => {
@@ -57,10 +68,16 @@ export default function Expenses() {
             type="text"
             placeholder="Search expenses logs..."
             className="w-full rounded-xl border border-brand-border bg-brand-surface/20 py-1.75 pl-8.5 pr-3 text-xs placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="flex gap-2 w-full sm:w-auto font-sans">
-          <select className="px-3.5 py-2 border border-brand-border rounded-xl text-xs bg-brand-card text-brand-neutral-dark focus:outline-none focus:ring-2 focus:ring-brand-primary font-medium">
+          <select 
+            className="px-3.5 py-2 border border-brand-border rounded-xl text-xs bg-brand-card text-brand-neutral-dark focus:outline-none focus:ring-2 focus:ring-brand-primary font-medium"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
             <option value="">All Categories</option>
             <option value="fuel">Fuel</option>
             <option value="maintenance">Maintenance</option>
@@ -85,12 +102,12 @@ export default function Expenses() {
             <TableRow>
               <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">Loading expenses...</TableCell>
             </TableRow>
-          ) : expenses.length === 0 ? (
+          ) : filteredExpenses.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">No expenses found.</TableCell>
             </TableRow>
           ) : (
-            expenses.map((expense) => (
+            filteredExpenses.map((expense) => (
               <TableRow key={expense.id}>
                 <TableCell>
                   <Badge variant={expense.type === 'fuel' ? 'info' : expense.type === 'maintenance' ? 'warning' : 'neutral'}>

@@ -11,6 +11,13 @@ export default function Fuel() {
   const [isOpen, setIsOpen] = useState(false);
   const [fuelLogs, setFuelLogs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredFuelLogs = fuelLogs.filter(log => {
+    if (!searchQuery) return true;
+    const vehicleText = log.vehicle ? `${log.vehicle.make} ${log.vehicle.model} ${log.vehicle.registration_number}` : '';
+    return vehicleText.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   useEffect(() => {
     const fetchFuelLogs = async () => {
@@ -85,6 +92,8 @@ export default function Fuel() {
             type="text"
             placeholder="Search fuel vehicle logs..."
             className="w-full rounded-xl border border-brand-border bg-brand-surface/20 py-1.75 pl-8.5 pr-3 text-xs placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
@@ -105,12 +114,12 @@ export default function Fuel() {
             <TableRow>
               <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">Loading fuel logs...</TableCell>
             </TableRow>
-          ) : fuelLogs.length === 0 ? (
+          ) : filteredFuelLogs.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">No fuel logs found.</TableCell>
             </TableRow>
           ) : (
-            fuelLogs.map((log) => (
+            filteredFuelLogs.map((log) => (
               <TableRow key={log.id}>
                 <TableCell className="font-semibold text-brand-primary dark:text-white">
                   {log.vehicle ? `${log.vehicle.make} ${log.vehicle.model} (${log.vehicle.registration_number})` : 'N/A'}

@@ -11,6 +11,19 @@ export default function Trips() {
   const [isOpen, setIsOpen] = useState(false);
   const [trips, setTrips] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  const filteredTrips = trips.filter(trip => {
+    const matchesSearch = trip.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (trip.start_location && trip.start_location.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                          (trip.end_location && trip.end_location.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                          (trip.driver && `${trip.driver.first_name} ${trip.driver.last_name}`.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                          (trip.vehicle && `${trip.vehicle.make} ${trip.vehicle.model} ${trip.vehicle.registration_number}`.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const matchesStatus = statusFilter === '' || trip.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   useEffect(() => {
     const fetchTrips = async () => {
@@ -58,10 +71,16 @@ export default function Trips() {
             type="text"
             placeholder="Search Trip ID or Destination..."
             className="w-full rounded-xl border border-brand-border bg-brand-surface/20 py-1.75 pl-8.5 pr-3 text-xs placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="flex gap-2 w-full sm:w-auto font-sans">
-          <select className="px-3.5 py-2 border border-brand-border rounded-xl text-xs bg-brand-card text-brand-neutral-dark focus:outline-none focus:ring-2 focus:ring-brand-primary font-medium">
+          <select 
+            className="px-3.5 py-2 border border-brand-border rounded-xl text-xs bg-brand-card text-brand-neutral-dark focus:outline-none focus:ring-2 focus:ring-brand-primary font-medium"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
             <option value="">All Dispatch Statuses</option>
             <option value="in_progress">In Progress</option>
             <option value="completed">Completed</option>
@@ -89,12 +108,12 @@ export default function Trips() {
             <TableRow>
               <TableCell colSpan={7} className="text-center py-8 text-brand-neutral-dark/60">Loading trips...</TableCell>
             </TableRow>
-          ) : trips.length === 0 ? (
+          ) : filteredTrips.length === 0 ? (
             <TableRow>
               <TableCell colSpan={7} className="text-center py-8 text-brand-neutral-dark/60">No trips found.</TableCell>
             </TableRow>
           ) : (
-            trips.map((trip) => (
+            filteredTrips.map((trip) => (
               <TableRow key={trip.id}>
                 <TableCell className="font-semibold text-brand-primary dark:text-white" title={trip.id}>{trip.id.split('-')[0].toUpperCase()}</TableCell>
                 <TableCell>{trip.vehicle ? `${trip.vehicle.make} ${trip.vehicle.model} (${trip.vehicle.registration_number})` : 'N/A'}</TableCell>
