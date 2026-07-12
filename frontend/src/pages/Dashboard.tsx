@@ -1,16 +1,20 @@
 import { useEffect, useState, useMemo } from 'react';
 import { tripService } from '@/services/tripService';
 import { expenseService } from '@/services/expenseService';
+import dayjs from 'dayjs';
 
 type FilterType = 'all' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 
 export default function Dashboard() {
   const [trips, setTrips] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
   const [totalExpenses, setTotalExpenses] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrip, setSelectedTrip] = useState<any | null>(null);
+  const [showStickySearch, setShowStickySearch] = useState(false);
+  const [showStickyFilters, setShowStickyFilters] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -18,8 +22,9 @@ export default function Dashboard() {
       try {
         const fetchedTrips = await tripService.getDashboardTrips();
         setTrips(fetchedTrips || []);
-        const expenses = await expenseService.getAll();
-        const total = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
+        const expensesData = await expenseService.getAll();
+        setExpenses(expensesData || []);
+        const total = (expensesData || []).reduce((acc, curr) => acc + Number(curr.amount), 0);
         setTotalExpenses(total);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -28,10 +33,149 @@ export default function Dashboard() {
       }
     };
     fetchDashboardData();
+
+    // Observer 1: Watch the hero search bar
+    const observer1 = new IntersectionObserver(
+      ([entry]) => {
+        // Only trigger when scrolling past the top edge
+        if (entry.boundingClientRect.top < 0) {
+          setShowStickySearch(!entry.isIntersecting);
+        } else {
+          setShowStickySearch(false);
+        }
+      },
+      { threshold: 0 }
+    );
+    
+    // Observer 2: Watch the original filters
+    const observer2 = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.boundingClientRect.top < 0) {
+          setShowStickyFilters(!entry.isIntersecting);
+        } else {
+          setShowStickyFilters(false);
+        }
+      },
+      { threshold: 0 }
+    );
+    
+    const searchSentinel = document.getElementById('search-sentinel');
+    const filtersSentinel = document.getElementById('filters-sentinel');
+    
+    if (searchSentinel) observer1.observe(searchSentinel);
+    if (filtersSentinel) observer2.observe(filtersSentinel);
+    
+    return () => {
+      observer1.disconnect();
+      observer2.disconnect();
+    };
   }, []);
 
+  // ── DYNAMIC DATA SHIFTING (HACKATHON MODE) ── //
+  // Shift all dates forward so the most recent completed/in_progress trip happens today.
+  const dateOffsetMs = useMemo(() => {
+    if (!trips.length && !expenses.length) return 0;
+    
+    const activeTrips = trips.filter(t => t.status === 'completed' || t.status === 'in_progress');
+    const tripPool = activeTrips.length > 0 ? activeTrips : trips;
+    
+    let maxDate = dayjs(0);
+    if (tripPool.length > 0) {
+      maxDate = tripPool.reduce((max, t) => {
+        const d = dayjs(t.start_time || t.created_at);
+        return d.isAfter(max) ? d : max;
+      }, dayjs(0));
+    } else if (expenses.length > 0) {
+      maxDate = expenses.reduce((max, e) => {
+        const d = dayjs(e.expense_date || e.created_at);
+        return d.isAfter(max) ? d : max;
+      }, dayjs(0));
+    }
+    
+    return dayjs().diff(maxDate, 'millisecond');
+  }, [trips, expenses]);
+
+  const liveTrips = useMemo(() => {
+    if (dateOffsetMs === 0) return trips;
+    return trips.map(t => {
+      const shifted = { ...t };
+      if (shifted.start_time) shifted.start_time = dayjs(shifted.start_time).add(dateOffsetMs, 'ms').toISOString();
+      if (shifted.end_time) shifted.end_time = dayjs(shifted.end_time).add(dateOffsetMs, 'ms').toISOString();
+      if (shifted.created_at) shifted.created_at = dayjs(shifted.created_at).add(dateOffsetMs, 'ms').toISOString();
+      return shifted;
+    });
+  }, [trips, dateOffsetMs]);
+
+  const liveExpenses = useMemo(() => {
+    if (dateOffsetMs === 0) return expenses;
+    return expenses.map(e => {
+      const shifted = { ...e };
+      if (shifted.expense_date) shifted.expense_date = dayjs(shifted.expense_date).add(dateOffsetMs, 'ms').toISOString();
+      if (shifted.created_at) shifted.created_at = dayjs(shifted.created_at).add(dateOffsetMs, 'ms').toISOString();
+      return shifted;
+    });
+  }, [expenses, dateOffsetMs]);
+
+  // ── DYNAMIC DATA CALCULATIONS ── //
+
+  // Fulfillment Performance: 17 days (6 past, today, 10 future)
+  const performanceData = useMemo(() => {
+    if (!liveTrips.length) return Array(17).fill(5);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const counts = Array(17).fill(0);
+
+    liveTrips.forEach(t => {
+      if (!t.start_time) return;
+      const d = new Date(t.start_time);
+      d.setHours(0, 0, 0, 0);
+      const diffDays = Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      const index = 6 + diffDays;
+      if (index >= 0 && index < 17) {
+        counts[index]++;
+      }
+    });
+
+    const max = Math.max(...counts, 1);
+    return counts.map(c => (c === 0 ? 5 : Math.max(10, Math.round((c / max) * 100))));
+  }, [liveTrips]);
+
+  // Expenses by Quarter and Category
+  const expenseData = useMemo(() => {
+    const data = {
+      fuel: [0, 0, 0, 0],
+      maintenance: [0, 0, 0, 0],
+      other: [0, 0, 0, 0]
+    };
+
+    liveExpenses.forEach(e => {
+      if (!e.amount || !e.type) return;
+      const d = new Date(e.expense_date || e.created_at);
+      const q = Math.floor(d.getMonth() / 3);
+      if (e.type === 'fuel') data.fuel[q] += Number(e.amount);
+      else if (e.type === 'maintenance') data.maintenance[q] += Number(e.amount);
+      else data.other[q] += Number(e.amount);
+    });
+
+    const fuelTotal = data.fuel.reduce((a, b) => a + b, 0);
+    const maintTotal = data.maintenance.reduce((a, b) => a + b, 0);
+    const otherTotal = data.other.reduce((a, b) => a + b, 0);
+    
+    // Scale heights to maximum column height
+    const maxTotal = Math.max(fuelTotal, maintTotal, otherTotal, 1);
+    const toPct = (val: number) => Math.round((val / maxTotal) * 100);
+
+    return {
+      fuel: data.fuel.map(toPct),
+      maintenance: data.maintenance.map(toPct),
+      other: data.other.map(toPct)
+    };
+  }, [liveExpenses]);
+
   const filteredTrips = useMemo(() => {
-    let list = trips;
+    let list = liveTrips;
     if (activeFilter !== 'all') {
       list = list.filter(t => t.status === activeFilter);
     }
@@ -45,7 +189,7 @@ export default function Dashboard() {
       );
     }
     return list;
-  }, [trips, activeFilter, searchQuery]);
+  }, [liveTrips, activeFilter, searchQuery]);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
@@ -91,13 +235,56 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="flex flex-col gap-8 w-full pb-10 font-sans">
+    <div className="flex flex-col gap-8 w-full pb-10 font-sans relative">
+
+      {/* ── UNIFIED FIXED STICKY HEADER ── */}
+      <div 
+        className={`fixed top-0 left-0 md:left-[260px] right-0 z-40 bg-white shadow-sm border-b border-brand-border/40 px-4 md:px-6 lg:px-8 py-3 flex items-center justify-between transition-transform duration-300 ease-in-out ${
+          showStickySearch ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        {/* Left: Search Bar */}
+        <div className="relative flex items-center w-full max-w-sm">
+          <svg className="absolute left-3 h-4 w-4 text-brand-neutral-dark/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search orders, drivers..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-1.5 bg-brand-surface border border-brand-border/60 rounded-xl focus:outline-none text-sm placeholder:text-brand-neutral-dark/50 text-brand-primary"
+          />
+        </div>
+
+        {/* Right: Filters (Appears later) */}
+        <div 
+          className={`flex items-center gap-2 overflow-x-auto transition-all duration-300 ease-in-out scrollbar-none ${
+            showStickyFilters ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none absolute right-4 md:right-8'
+          }`}
+        >
+          {FILTERS.map(f => (
+            <button
+              key={`sticky-${f.value}`}
+              onClick={() => setActiveFilter(f.value)}
+              className={`px-4 py-1.5 rounded-xl text-[12px] font-semibold shadow-sm whitespace-nowrap transition-colors ${
+                activeFilter === f.value
+                  ? 'bg-brand-primary text-white'
+                  : 'bg-white border border-brand-border/60 text-brand-neutral-dark/80 hover:bg-brand-surface'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
 
       {/* ── TOP HERO SECTION ── */}
       <div className="w-full rounded-[2rem] bg-[#F1F6F3] p-6 lg:p-8 relative shadow-sm border border-brand-border/30">
 
         {/* Search & Actions */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10 relative">
           <div className="relative w-full sm:max-w-xs flex items-center">
             <svg className="absolute left-0 h-4.5 w-4.5 text-brand-neutral-dark/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -110,6 +297,9 @@ export default function Dashboard() {
               className="w-full pl-7 pr-4 py-1.5 bg-transparent focus:outline-none text-sm font-sans placeholder:text-brand-neutral-dark/50 text-brand-primary"
             />
           </div>
+          {/* Sentinel 1: Track when hero search leaves view */}
+          <div id="search-sentinel" className="absolute top-10 h-px w-full pointer-events-none" />
+
           <div className="flex items-center gap-3 sm:gap-5">
             <button className="flex items-center gap-2 text-[13px] font-semibold text-brand-primary hover:opacity-70 transition-opacity">
               <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -147,15 +337,15 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="relative h-48 w-full flex items-end justify-between px-2">
-              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none z-0">
                 <div className="w-full flex justify-end"><span className="text-[10px] text-brand-neutral-dark/40 font-semibold transform -translate-y-1/2">100%</span></div>
                 <div className="w-full border-t border-brand-border/50 border-dashed flex justify-end"><span className="text-[10px] text-brand-neutral-dark/40 font-semibold transform -translate-y-1/2 bg-[#F1F6F3] pl-2">50%</span></div>
                 <div className="w-full border-t border-brand-border/50 flex justify-end"><span className="text-[10px] text-brand-neutral-dark/40 font-semibold transform -translate-y-1/2 bg-[#F1F6F3] pl-2">0%</span></div>
               </div>
-              {[40, 60, 45, 75, 45, 25, 95, 50, 65, 40, 20, 30, 45, 55, 90, 50, 40].map((h, i) => (
-                <div key={i} className="relative flex flex-col items-center group w-4">
+              {performanceData.map((h, i) => (
+                <div key={i} className="relative flex flex-col items-center group w-4 h-full justify-end z-10">
                   {i === 6 && <span className="absolute -top-7 text-[11px] font-bold text-brand-primary whitespace-nowrap">Today</span>}
-                  <div className={`w-full rounded-sm ${i === 6 ? 'bg-brand-primary' : 'bg-gradient-to-t from-brand-border/10 to-brand-border/80'}`} style={{ height: `${h}%` }}>
+                  <div className={`w-full rounded-sm transition-all duration-700 ease-out ${i === 6 ? 'bg-brand-primary' : 'bg-gradient-to-t from-brand-border/10 to-brand-border/80'}`} style={{ height: `${h}%` }}>
                     {i !== 6 && <div className="h-0.5 w-full bg-brand-neutral-dark/60 rounded-t-sm" />}
                   </div>
                 </div>
@@ -189,30 +379,30 @@ export default function Dashboard() {
             <div className="relative h-[110px] w-full flex items-end justify-between">
               <div className="flex flex-col gap-1 w-1/4 h-full justify-end relative z-10">
                 <span className="text-[10px] font-bold text-brand-primary mb-1">Fuel</span>
-                <div className="h-3 bg-brand-neutral-dark/30 rounded-md w-full" />
-                <div className="h-4 bg-brand-neutral-dark/50 rounded-md w-full" />
-                <div className="h-7 bg-brand-neutral-dark/70 rounded-md w-full" />
-                <div className="h-4 bg-brand-primary rounded-md w-full" />
+                {expenseData.fuel[3] > 0 && <div className="bg-brand-neutral-dark/30 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.fuel[3]}%` }} />}
+                {expenseData.fuel[2] > 0 && <div className="bg-brand-neutral-dark/50 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.fuel[2]}%` }} />}
+                {expenseData.fuel[1] > 0 && <div className="bg-brand-neutral-dark/70 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.fuel[1]}%` }} />}
+                {expenseData.fuel[0] > 0 && <div className="bg-brand-primary rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.fuel[0]}%` }} />}
               </div>
               <div className="absolute left-[25%] w-[12.5%] h-full">
                 <svg className="w-full h-full opacity-10" preserveAspectRatio="none"><polygon points="0,45 100,65 100,110 0,110" fill="currentColor" /></svg>
               </div>
-              <div className="flex flex-col gap-1 w-1/4 h-[80%] justify-end relative z-10">
-                <span className="text-[10px] font-bold text-brand-primary mb-1 text-center">Maintenance</span>
-                <div className="h-2 bg-brand-neutral-dark/30 rounded-md w-full" />
-                <div className="h-3 bg-brand-neutral-dark/50 rounded-md w-full" />
-                <div className="h-5 bg-brand-neutral-dark/70 rounded-md w-full" />
-                <div className="h-3 bg-brand-primary rounded-md w-full" />
+              <div className="flex flex-col gap-1 w-1/4 h-full justify-end relative z-10 text-center">
+                <span className="text-[10px] font-bold text-brand-primary mb-1">Maintenance</span>
+                {expenseData.maintenance[3] > 0 && <div className="bg-brand-neutral-dark/30 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.maintenance[3]}%` }} />}
+                {expenseData.maintenance[2] > 0 && <div className="bg-brand-neutral-dark/50 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.maintenance[2]}%` }} />}
+                {expenseData.maintenance[1] > 0 && <div className="bg-brand-neutral-dark/70 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.maintenance[1]}%` }} />}
+                {expenseData.maintenance[0] > 0 && <div className="bg-brand-primary rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.maintenance[0]}%` }} />}
               </div>
               <div className="absolute left-[62.5%] w-[12.5%] h-full">
                 <svg className="w-full h-full opacity-10" preserveAspectRatio="none"><polygon points="0,65 100,10 100,110 0,110" fill="currentColor" /></svg>
               </div>
-              <div className="flex flex-col gap-1 w-1/4 h-[110%] justify-end relative z-10 transform translate-y-2">
-                <span className="text-[10px] font-bold text-brand-primary mb-1 text-right">Other</span>
-                <div className="h-5 bg-brand-neutral-dark/30 rounded-md w-full" />
-                <div className="h-5 bg-brand-neutral-dark/50 rounded-md w-full" />
-                <div className="h-9 bg-brand-neutral-dark/70 rounded-md w-full" />
-                <div className="h-6 bg-brand-primary rounded-md w-full" />
+              <div className="flex flex-col gap-1 w-1/4 h-full justify-end relative z-10 text-right">
+                <span className="text-[10px] font-bold text-brand-primary mb-1">Other</span>
+                {expenseData.other[3] > 0 && <div className="bg-brand-neutral-dark/30 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.other[3]}%` }} />}
+                {expenseData.other[2] > 0 && <div className="bg-brand-neutral-dark/50 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.other[2]}%` }} />}
+                {expenseData.other[1] > 0 && <div className="bg-brand-neutral-dark/70 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.other[1]}%` }} />}
+                {expenseData.other[0] > 0 && <div className="bg-brand-primary rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.other[0]}%` }} />}
               </div>
             </div>
             <div className="flex justify-center items-center gap-4 mt-6 text-[10px] font-semibold text-brand-primary">
@@ -226,7 +416,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── LIVE ORDERS SECTION ── */}
-      <div className="w-full">
+      <div className="w-full relative">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 px-2">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-sans font-medium text-brand-primary">Live Orders</h2>
@@ -234,6 +424,7 @@ export default function Dashboard() {
               {filteredTrips.length}
             </span>
           </div>
+          
           <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
             {FILTERS.map(f => (
               <button
@@ -250,6 +441,9 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+        
+        {/* Sentinel 2: Track when original filters leave view */}
+        <div id="filters-sentinel" className="absolute top-10 h-px w-full pointer-events-none" />
 
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-6 gap-4 px-6 py-2 text-[11px] font-semibold text-brand-neutral-dark/50">
