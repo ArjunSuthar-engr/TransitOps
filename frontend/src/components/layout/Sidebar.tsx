@@ -2,7 +2,8 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { authService } from '@/services/authService';
 import type { User } from '@/types/database';
-import { useRole, Role } from '@/contexts/RoleContext';
+import { useRole } from '@/contexts/RoleContext';
+import type { Role } from '@/contexts/RoleContext';
 
 interface SidebarProps {
   onCloseMobile?: () => void;
