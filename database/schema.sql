@@ -132,14 +132,14 @@ ALTER TABLE public.maintenance_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.fuel_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
 
--- Basic Policies (Can be refined by Janak in Phase 1 based on actual auth flow)
--- For demo purposes, we will allow read access to authenticated users and all access to authenticated users.
+-- Basic Policies (Simplified for Hackathon Demo)
+-- Allow authenticated users to perform SELECT, INSERT, UPDATE, DELETE
 
-CREATE POLICY "Allow read access for authenticated users on roles" ON public.roles FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Allow all access for authenticated users on users" ON public.users FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow all access for authenticated users on vehicles" ON public.vehicles FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow all access for authenticated users on drivers" ON public.drivers FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow all access for authenticated users on trips" ON public.trips FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow all access for authenticated users on maintenance_logs" ON public.maintenance_logs FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow all access for authenticated users on fuel_logs" ON public.fuel_logs FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow all access for authenticated users on expenses" ON public.expenses FOR ALL TO authenticated USING (true);
+CREATE POLICY "Allow all access for authenticated users on roles" ON public.roles FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for authenticated users on users" ON public.users FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for authenticated users on vehicles" ON public.vehicles FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for authenticated users on drivers" ON public.drivers FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for authenticated users on trips" ON public.trips FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for authenticated users on maintenance_logs" ON public.maintenance_logs FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for authenticated users on fuel_logs" ON public.fuel_logs FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for authenticated users on expenses" ON public.expenses FOR ALL TO authenticated USING (true) WITH CHECK (true);
