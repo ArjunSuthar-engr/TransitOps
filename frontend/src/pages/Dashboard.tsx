@@ -26,6 +26,14 @@ export default function Dashboard() {
   const [availableVehicles, setAvailableVehicles] = useState<any[]>([]);
   const { role } = useRole();
 
+  const handleStickyInteraction = () => {
+    const sentinel = document.getElementById('filters-sentinel');
+    if (sentinel) {
+      const y = sentinel.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: y + 1, behavior: 'smooth' });
+    }
+  };
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       setIsLoading(true);
@@ -341,6 +349,7 @@ export default function Dashboard() {
             placeholder="Search orders, drivers..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={handleStickyInteraction}
             className="w-full pl-9 pr-4 py-1.5 bg-brand-surface border border-brand-border/60 rounded-xl focus:outline-none text-sm placeholder:text-brand-neutral-dark/50 text-brand-primary"
           />
         </div>
@@ -354,7 +363,10 @@ export default function Dashboard() {
           {FILTERS.map(f => (
             <button
               key={`sticky-${f.value}`}
-              onClick={() => setActiveFilter(f.value)}
+              onClick={() => {
+                setActiveFilter(f.value);
+                handleStickyInteraction();
+              }}
               className={`px-4 py-1.5 rounded-xl text-[12px] font-semibold shadow-sm whitespace-nowrap transition-colors ${
                 activeFilter === f.value
                   ? 'bg-brand-primary text-white'
@@ -584,7 +596,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── LIVE ORDERS SECTION ── */}
-      <div className="w-full relative">
+      <div className="w-full relative min-h-screen">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 px-2">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-sans font-medium text-brand-primary">
@@ -806,7 +818,7 @@ export default function Dashboard() {
                   {!selectedTrip.driver_id || !selectedTrip.vehicle_id ? 'Assign Driver & Vehicle First' : 'Start Trip (Mark In Progress)'}
                 </button>
               )}
-              {(role === 'dispatcher' || role === 'admin') && selectedTrip.status === 'in_progress' && (
+              {(role === 'driver' || role === 'admin') && selectedTrip.status === 'in_progress' && (
                 <button
                   onClick={() => handleUpdateTripStatus(selectedTrip.id, selectedTrip.status)}
                   className="w-full py-3 rounded-2xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-colors"
