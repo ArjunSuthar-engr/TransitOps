@@ -587,7 +587,9 @@ export default function Dashboard() {
       <div className="w-full relative">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 px-2">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-sans font-medium text-brand-primary">All Orders</h2>
+            <h2 className="text-xl font-sans font-medium text-brand-primary">
+              {FILTERS.find(f => f.value === activeFilter)?.label || 'All'} Orders
+            </h2>
             <span className="px-2.5 py-1 rounded-lg bg-white border border-brand-border/60 text-xs font-bold text-brand-neutral-dark/70 shadow-sm">
               {filteredTrips.length}
             </span>
