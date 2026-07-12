@@ -6,25 +6,85 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { driverService } from '@/services/driverService';
+import { tripService } from '@/services/tripService';
 import type { Driver } from '@/types/database';
 
 export default function Drivers() {
   const [isOpen, setIsOpen] = useState(false);
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [trips, setTrips] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [licenseNumber, setLicenseNumber] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const getDriverStatus = (driverId: string, baseStatus: string) => {
+    const hasActiveTrip = trips.some(t => t.driver_id === driverId && t.status === 'in_progress');
+    return hasActiveTrip ? 'on_trip' : baseStatus;
+  };
+
+  const filteredDrivers = drivers.filter(d => {
+    const dStatus = getDriverStatus(d.id, d.status);
+    const matchesSearch = `${d.first_name} ${d.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          d.license_number.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === '' || dStatus === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const handleOpenModal = () => {
+    setFullName('');
+    setPhone('');
+    setLicenseNumber('');
+    setIsOpen(true);
+  };
+
+  const handleAddDriver = async () => {
+    if (!fullName || !licenseNumber) {
+      alert('Please fill out Name and License Number.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const parts = fullName.trim().split(' ');
+      const first_name = parts[0] || '';
+      const last_name = parts.slice(1).join(' ') || '';
+      await driverService.create({
+        first_name,
+        last_name,
+        phone,
+        license_number: licenseNumber,
+        status: 'available'
+      });
+      const data = await driverService.getAll();
+      setDrivers(data || []);
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Failed to add driver:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDrivers = async () => {
+    const fetchDriversAndTrips = async () => {
       try {
-        const data = await driverService.getAll();
-        setDrivers(data || []);
+        const [driversData, tripsData] = await Promise.all([
+          driverService.getAll(),
+          tripService.getDashboardTrips()
+        ]);
+        setDrivers(driversData || []);
+        setTrips(tripsData || []);
       } catch (error) {
-        console.error('Failed to fetch drivers:', error);
+        console.error('Failed to fetch data:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchDrivers();
+    fetchDriversAndTrips();
   }, []);
 
   return (
@@ -32,7 +92,7 @@ export default function Drivers() {
       <PageHeader
         title="Drivers Registry"
         description="Manage vehicle operators, contact details, shifts, and active licensing status."
-        actions={<Button size="sm" onClick={() => setIsOpen(true)}>Add Driver</Button>}
+        actions={<Button size="sm" onClick={handleOpenModal}>Add Driver</Button>}
       />
 
       {/* Filter and Search Bar */}
@@ -47,10 +107,16 @@ export default function Drivers() {
             type="text"
             placeholder="Search drivers name..."
             className="w-full rounded-xl border border-brand-border bg-brand-surface/20 py-1.75 pl-8.5 pr-3 text-xs placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="flex gap-2 w-full sm:w-auto font-sans">
-          <select className="px-3.5 py-2 border border-brand-border rounded-xl text-xs bg-brand-card text-brand-neutral-dark focus:outline-none focus:ring-2 focus:ring-brand-primary font-medium">
+          <select 
+            className="px-3.5 py-2 border border-brand-border rounded-xl text-xs bg-brand-card text-brand-neutral-dark focus:outline-none focus:ring-2 focus:ring-brand-primary font-medium"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
             <option value="">All Availabilities</option>
             <option value="available">Available</option>
             <option value="on_trip">On Trip</option>
@@ -75,26 +141,29 @@ export default function Drivers() {
             <TableRow>
               <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">Loading drivers...</TableCell>
             </TableRow>
-          ) : drivers.length === 0 ? (
+          ) : filteredDrivers.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">No drivers found.</TableCell>
             </TableRow>
           ) : (
-            drivers.map((driver) => (
-              <TableRow key={driver.id}>
-                <TableCell className="font-semibold text-brand-primary dark:text-white">{driver.first_name} {driver.last_name}</TableCell>
-                <TableCell>{driver.phone || 'N/A'}</TableCell>
-                <TableCell>{driver.license_number}</TableCell>
-                <TableCell>
-                  <Badge variant={driver.status === 'available' ? 'success' : driver.status === 'on_trip' ? 'info' : 'neutral'}>
-                    {driver.status ? driver.status.replace('_', ' ') : 'Unknown'}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="outline" size="sm">Edit</Button>
-                </TableCell>
-              </TableRow>
-            ))
+            filteredDrivers.map((driver) => {
+              const computedStatus = getDriverStatus(driver.id, driver.status);
+              return (
+                <TableRow key={driver.id}>
+                  <TableCell className="font-semibold text-brand-primary dark:text-white">{driver.first_name} {driver.last_name}</TableCell>
+                  <TableCell>{driver.phone || 'N/A'}</TableCell>
+                  <TableCell>{driver.license_number}</TableCell>
+                  <TableCell>
+                    <Badge variant={computedStatus === 'available' ? 'success' : computedStatus === 'on_trip' ? 'info' : 'neutral'}>
+                      {computedStatus ? computedStatus.replace('_', ' ') : 'Unknown'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="outline" size="sm">Edit</Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>
@@ -107,14 +176,32 @@ export default function Drivers() {
         footer={
           <>
             <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={() => setIsOpen(false)}>Add Driver</Button>
+            <Button size="sm" onClick={handleAddDriver} disabled={isSubmitting}>
+              {isSubmitting ? 'Adding...' : 'Add Driver'}
+            </Button>
           </>
         }
       >
         <div className="flex flex-col gap-4">
-          <Input label="Full Name" placeholder="e.g. Marcus Vance" />
-          <Input label="Phone Number" type="tel" placeholder="e.g. +1 555-0199" />
-          <Input label="License Number" placeholder="e.g. DL-98402A" />
+          <Input 
+            label="Full Name" 
+            placeholder="e.g. Marcus Vance" 
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+          />
+          <Input 
+            label="Phone Number" 
+            type="tel" 
+            placeholder="e.g. +1 555-0199" 
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+          <Input 
+            label="License Number" 
+            placeholder="e.g. DL-98402A" 
+            value={licenseNumber}
+            onChange={(e) => setLicenseNumber(e.target.value)}
+          />
         </div>
       </Modal>
     </div>
