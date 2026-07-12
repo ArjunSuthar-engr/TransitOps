@@ -3,22 +3,27 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '@/services/authService';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { useRole } from '@/contexts/RoleContext';
+import type { Role } from '@/contexts/RoleContext';
 
 const DEMO_ACCOUNTS = [
   {
     label: 'Admin',
+    roleType: 'admin' as Role,
     icon: '🔑',
     email: 'admin@transitops.com',
     password: 'Transit@Admin1',
   },
   {
     label: 'Fleet Manager',
+    roleType: 'fleet_manager' as Role,
     icon: '🚛',
     email: 'manager@transitops.com',
     password: 'Transit@Fleet1',
   },
   {
     label: 'Dispatcher',
+    roleType: 'dispatcher' as Role,
     icon: '📋',
     email: 'dispatch@transitops.com',
     password: 'Transit@Disp1',
@@ -32,6 +37,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { setRole } = useRole();
 
   const from = location.state?.from?.pathname || '/dashboard';
 
@@ -40,6 +46,11 @@ export default function Login() {
     setIsLoading(true);
     setError('');
     try {
+      if (email.includes('admin')) setRole('admin');
+      else if (email.includes('manager')) setRole('fleet_manager');
+      else if (email.includes('dispatch')) setRole('dispatcher');
+      else setRole('admin');
+      
       await authService.login(email, password);
       navigate(from, { replace: true });
     } catch (err: any) {
@@ -52,6 +63,7 @@ export default function Login() {
   const fillDemo = (acc: typeof DEMO_ACCOUNTS[0]) => {
     setEmail(acc.email);
     setPassword(acc.password);
+    setRole(acc.roleType);
     setError('');
   };
 
