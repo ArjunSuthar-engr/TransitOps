@@ -186,29 +186,15 @@ export default function Dashboard() {
       else bucket.other += amount;
     });
 
-    const data = {
-      fuel: [0, 0, 0, 0],
-      maintenance: [0, 0, 0, 0],
-      other: [0, 0, 0, 0]
-    };
-
-    monthBuckets.forEach((bucket, index) => {
-      data.fuel[index] = bucket.fuel;
-      data.maintenance[index] = bucket.maintenance;
-      data.other[index] = bucket.other;
-    });
-
-    const fuelTotal = Math.max(...data.fuel, 1);
-    const maintTotal = Math.max(...data.maintenance, 1);
-    const otherTotal = Math.max(...data.other, 1);
-
-    const toPct = (val: number, maxTotal: number) => Math.round((val / maxTotal) * 100);
-
     return {
-      labels: monthBuckets.map(bucket => bucket.label),
-      fuel: data.fuel.map(val => toPct(val, fuelTotal)),
-      maintenance: data.maintenance.map(val => toPct(val, maintTotal)),
-      other: data.other.map(val => toPct(val, otherTotal))
+      months: monthBuckets.map(bucket => ({
+        label: bucket.label,
+        fuel: bucket.fuel,
+        maintenance: bucket.maintenance,
+        other: bucket.other,
+        total: bucket.fuel + bucket.maintenance + bucket.other,
+      })),
+      grandTotal: monthBuckets.reduce((sum, bucket) => sum + bucket.fuel + bucket.maintenance + bucket.other, 0),
     };
   }, [expenses]);
 
@@ -748,54 +734,47 @@ export default function Dashboard() {
               <span className="text-[40px] font-sans font-medium text-brand-primary tracking-tight leading-none">
                 {isLoading ? '₹...' : formatCurrency(totalExpenses)}
               </span>
-              <span className="inline-flex items-center gap-0.5 mb-1.5 px-2 py-0.5 rounded-[6px] bg-white border border-brand-border/60 text-[10px] font-bold text-brand-neutral-dark/50 shadow-sm">Live Data</span>
+              <span className="inline-flex items-center gap-0.5 mb-1.5 px-2 py-0.5 rounded-md bg-white border border-brand-border/60 text-[10px] font-bold text-brand-neutral-dark/50 shadow-sm">Live Data</span>
             </div>
-            <div className="relative h-[110px] w-full flex items-end justify-between">
-              <div className="flex flex-col gap-1 w-1/4 h-full justify-end relative z-10">
-                <span className="text-[10px] font-bold text-brand-primary mb-1">Fuel</span>
-                {expenseData.fuel[3] > 0 && <div className="bg-brand-neutral-dark/30 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.fuel[3]}%` }} />}
-                {expenseData.fuel[2] > 0 && <div className="bg-brand-neutral-dark/50 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.fuel[2]}%` }} />}
-                {expenseData.fuel[1] > 0 && <div className="bg-brand-neutral-dark/70 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.fuel[1]}%` }} />}
-                {expenseData.fuel[0] > 0 && <div className="bg-brand-primary rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.fuel[0]}%` }} />}
+
+            <div className="relative h-[160px] w-full rounded-2xl border border-brand-border/40 bg-white/40 px-4 py-3">
+              <div className="absolute inset-0 px-4 py-3 flex flex-col justify-between pointer-events-none">
+                <div className="flex justify-end"><span className="text-[10px] font-semibold text-brand-neutral-dark/35">{formatCurrency(Math.max(...expenseData.months.map(m => m.total), 1))}</span></div>
+                <div className="border-t border-dashed border-brand-border/50" />
+                <div className="flex justify-end"><span className="text-[10px] font-semibold text-brand-neutral-dark/35">50%</span></div>
+                <div className="border-t border-brand-border/50" />
+                <div className="flex justify-end"><span className="text-[10px] font-semibold text-brand-neutral-dark/35">0</span></div>
               </div>
-              <div className="absolute left-[25%] w-[12.5%] h-full">
-                <svg className="w-full h-full opacity-10" preserveAspectRatio="none" viewBox="0 0 100 100">
-                  <polygon 
-                    points={`0,${100 - (expenseData.fuel.reduce((a, b) => a + b, 0) * 0.8)} 100,${100 - (expenseData.maintenance.reduce((a, b) => a + b, 0) * 0.8)} 100,100 0,100`} 
-                    fill="currentColor" 
-                  />
-                </svg>
-              </div>
-              <div className="flex flex-col gap-1 w-1/4 h-full justify-end relative z-10 text-center">
-                <span className="text-[10px] font-bold text-brand-primary mb-1">Maintenance</span>
-                {expenseData.maintenance[3] > 0 && <div className="bg-brand-neutral-dark/30 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.maintenance[3]}%` }} />}
-                {expenseData.maintenance[2] > 0 && <div className="bg-brand-neutral-dark/50 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.maintenance[2]}%` }} />}
-                {expenseData.maintenance[1] > 0 && <div className="bg-brand-neutral-dark/70 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.maintenance[1]}%` }} />}
-                {expenseData.maintenance[0] > 0 && <div className="bg-brand-primary rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.maintenance[0]}%` }} />}
-              </div>
-              <div className="absolute left-[62.5%] w-[12.5%] h-full">
-                <svg className="w-full h-full opacity-10" preserveAspectRatio="none" viewBox="0 0 100 100">
-                  <polygon 
-                    points={`0,${100 - (expenseData.maintenance.reduce((a, b) => a + b, 0) * 0.8)} 100,${100 - (expenseData.other.reduce((a, b) => a + b, 0) * 0.8)} 100,100 0,100`} 
-                    fill="currentColor" 
-                  />
-                </svg>
-              </div>
-              <div className="flex flex-col gap-1 w-1/4 h-full justify-end relative z-10 text-right">
-                <span className="text-[10px] font-bold text-brand-primary mb-1">Other</span>
-                {expenseData.other[3] > 0 && <div className="bg-brand-neutral-dark/30 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.other[3]}%` }} />}
-                {expenseData.other[2] > 0 && <div className="bg-brand-neutral-dark/50 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.other[2]}%` }} />}
-                {expenseData.other[1] > 0 && <div className="bg-brand-neutral-dark/70 rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.other[1]}%` }} />}
-                {expenseData.other[0] > 0 && <div className="bg-brand-primary rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.other[0]}%` }} />}
+
+              <div className="relative z-10 flex h-full items-end justify-between gap-3 pt-1">
+                {expenseData.months.map((month) => {
+                  const maxTotal = Math.max(...expenseData.months.map(m => m.total), 1);
+                  const totalHeight = month.total > 0 ? Math.max(10, Math.round((month.total / maxTotal) * 100)) : 0;
+                  const fuelHeight = month.total > 0 ? Math.round((month.fuel / month.total) * totalHeight) : 0;
+                  const maintenanceHeight = month.total > 0 ? Math.round((month.maintenance / month.total) * totalHeight) : 0;
+                  const otherHeight = Math.max(totalHeight - fuelHeight - maintenanceHeight, 0);
+
+                  return (
+                    <div key={month.label} className="flex flex-1 flex-col items-center justify-end gap-2">
+                      <div className="flex h-[120px] w-full max-w-[74px] flex-col justify-end overflow-hidden rounded-xl border border-brand-border/40 bg-brand-surface/30 shadow-sm">
+                        {otherHeight > 0 && <div className="w-full bg-brand-neutral-dark/30" style={{ height: `${otherHeight}%` }} />}
+                        {maintenanceHeight > 0 && <div className="w-full bg-brand-neutral-dark/55" style={{ height: `${maintenanceHeight}%` }} />}
+                        {fuelHeight > 0 && <div className="w-full bg-brand-primary" style={{ height: `${fuelHeight}%` }} />}
+                      </div>
+                      <div className="text-center">
+                        <div className="text-[11px] font-bold text-brand-primary">{month.label}</div>
+                        <div className="text-[10px] font-semibold text-brand-neutral-dark/45">{formatCurrency(month.total)}</div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-            <div className="flex justify-center items-center gap-4 mt-6 text-[10px] font-semibold text-brand-primary">
-              {expenseData.labels.map((label, index) => (
-                <div key={label} className="flex items-center gap-1.5">
-                  <div className={`w-2 h-2 rounded-sm ${index === 0 ? 'bg-brand-primary' : index === 1 ? 'bg-brand-neutral-dark/70' : index === 2 ? 'bg-brand-neutral-dark/50' : 'bg-brand-neutral-dark/30'}`} />
-                  {label}
-                </div>
-              ))}
+
+            <div className="mt-4 flex flex-wrap justify-center gap-4 text-[10px] font-semibold text-brand-primary">
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-primary" />Fuel</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-neutral-dark/55" />Maintenance</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-neutral-dark/30" />Other</div>
             </div>
           </div>
           )}
