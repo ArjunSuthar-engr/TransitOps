@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { tripService } from '@/services/tripService';
 import { expenseService } from '@/services/expenseService';
 import dayjs from 'dayjs';
+import { useRole } from '@/contexts/RoleContext';
 
 type FilterType = 'all' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 
@@ -15,6 +16,7 @@ export default function Dashboard() {
   const [selectedTrip, setSelectedTrip] = useState<any | null>(null);
   const [showStickySearch, setShowStickySearch] = useState(false);
   const [showStickyFilters, setShowStickyFilters] = useState(false);
+  const { role } = useRole();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -317,7 +319,7 @@ export default function Dashboard() {
         </div>
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+        <div className={`grid grid-cols-1 ${role !== 'dispatcher' ? 'lg:grid-cols-2' : ''} gap-12 lg:gap-16`}>
 
           {/* LEFT: Fulfillment Performance */}
           <div className="flex flex-col">
@@ -354,9 +356,10 @@ export default function Dashboard() {
           </div>
 
           {/* RIGHT: Total Expenses */}
-          <div className="flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-base font-sans font-medium text-brand-primary">Total Expenses</h3>
+          {role !== 'dispatcher' && (
+            <div className="flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-sans font-medium text-brand-primary">Total Expenses</h3>
               <div className="flex gap-2">
                 <button className="h-9 w-9 flex items-center justify-center rounded-[10px] bg-white border border-brand-border/40 shadow-sm text-brand-primary hover:bg-brand-surface">
                   <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -412,6 +415,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-neutral-dark/30" />Q4</div>
             </div>
           </div>
+          )}
         </div>
       </div>
 
