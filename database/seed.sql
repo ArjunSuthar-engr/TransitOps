@@ -1,13 +1,13 @@
 -- TransitOps Heavy Seed Data (Phase 2)
 
 -- 1. Insert into auth.users (Mock data for local testing)
-INSERT INTO auth.users (id, instance_id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, role, confirmation_token, email_change, email_change_token_new, recovery_token) VALUES
-('7ffb007c-e9e1-40dd-ae2a-8bae6542d109', '00000000-0000-0000-0000-000000000000', 'admin@transitops.com', crypt('Transit@Admin1', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', '', '', '', ''),
-('a7110d7c-3f3f-41d8-bfc3-b1b6ed71131e', '00000000-0000-0000-0000-000000000000', 'arjun@transitops.com', crypt('Arjun@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', '', '', '', ''),
-('6ef59264-8ffd-4182-8413-354248b59075', '00000000-0000-0000-0000-000000000000', 'dispatch@transitops.com', crypt('Transit@Disp1', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', '', '', '', ''),
-('e45e23bf-6ffe-4b14-998e-ac8e2b1e91af', '00000000-0000-0000-0000-000000000000', 'janak@transitops.com', crypt('Janak@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', '', '', '', ''),
-('47ec9755-a2bc-455f-a3bf-f3ebea542a4c', '00000000-0000-0000-0000-000000000000', 'manager@transitops.com', crypt('Transit@Fleet1', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', '', '', '', ''),
-('726356d8-ca5b-4e93-a82a-95b958370f72', '00000000-0000-0000-0000-000000000000', 'raj@transitops.com', crypt('Raj@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', '', '', '', '')
+INSERT INTO auth.users (id, instance_id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, role, aud, confirmation_token, email_change, email_change_token_new, recovery_token) VALUES
+('7ffb007c-e9e1-40dd-ae2a-8bae6542d109', '00000000-0000-0000-0000-000000000000', 'admin@transitops.com', crypt('Transit@Admin1', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', 'authenticated', '', '', '', ''),
+('a7110d7c-3f3f-41d8-bfc3-b1b6ed71131e', '00000000-0000-0000-0000-000000000000', 'arjun@transitops.com', crypt('Arjun@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', 'authenticated', '', '', '', ''),
+('6ef59264-8ffd-4182-8413-354248b59075', '00000000-0000-0000-0000-000000000000', 'dispatch@transitops.com', crypt('Transit@Disp1', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', 'authenticated', '', '', '', ''),
+('e45e23bf-6ffe-4b14-998e-ac8e2b1e91af', '00000000-0000-0000-0000-000000000000', 'janak@transitops.com', crypt('Janak@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', 'authenticated', '', '', '', ''),
+('47ec9755-a2bc-455f-a3bf-f3ebea542a4c', '00000000-0000-0000-0000-000000000000', 'manager@transitops.com', crypt('Transit@Fleet1', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', 'authenticated', '', '', '', ''),
+('726356d8-ca5b-4e93-a82a-95b958370f72', '00000000-0000-0000-0000-000000000000', 'raj@transitops.com', crypt('Raj@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', 'authenticated', '', '', '', '')
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Roles
