@@ -282,6 +282,30 @@ export default function Dashboard() {
     }
   };
 
+  const handleUpdateTripStatus = async (tripId: string, currentStatus: string) => {
+    try {
+      let nextStatus = currentStatus;
+      let updates: any = {};
+      if (currentStatus === 'scheduled') {
+        nextStatus = 'in_progress';
+      } else if (currentStatus === 'in_progress') {
+        nextStatus = 'completed';
+        updates.end_time = dayjs().toISOString();
+      } else {
+        return;
+      }
+      updates.status = nextStatus;
+      await tripService.update(tripId, updates);
+      
+      const fetchedTrips = await tripService.getDashboardTrips();
+      setTrips(fetchedTrips || []);
+      const updatedTrip = fetchedTrips?.find((t: any) => t.id === tripId);
+      if (updatedTrip) setSelectedTrip(updatedTrip);
+    } catch (err) {
+      console.error('Failed to update status:', err);
+    }
+  };
+
   const FILTERS: { label: string; value: FilterType }[] = [
     { label: 'All', value: 'all' },
     { label: 'Scheduled', value: 'scheduled' },
@@ -686,10 +710,27 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-brand-border/40">
+            <div className="px-6 py-4 border-t border-brand-border/40 flex flex-col gap-3">
+              {(role === 'dispatcher' || role === 'admin') && selectedTrip.status === 'scheduled' && (
+                <button
+                  onClick={() => handleUpdateTripStatus(selectedTrip.id, selectedTrip.status)}
+                  disabled={!selectedTrip.driver_id || !selectedTrip.vehicle_id}
+                  className="w-full py-3 rounded-2xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {!selectedTrip.driver_id || !selectedTrip.vehicle_id ? 'Assign Driver & Vehicle First' : 'Start Trip (Mark In Progress)'}
+                </button>
+              )}
+              {(role === 'dispatcher' || role === 'admin') && selectedTrip.status === 'in_progress' && (
+                <button
+                  onClick={() => handleUpdateTripStatus(selectedTrip.id, selectedTrip.status)}
+                  className="w-full py-3 rounded-2xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-colors"
+                >
+                  Complete Trip
+                </button>
+              )}
               <button
                 onClick={() => setSelectedTrip(null)}
-                className="w-full py-3 rounded-2xl bg-brand-primary text-white text-sm font-semibold hover:bg-brand-primary/90 transition-colors"
+                className="w-full py-3 rounded-2xl bg-white border border-brand-border/60 text-brand-primary text-sm font-semibold hover:bg-brand-surface transition-colors"
               >
                 Close
               </button>
