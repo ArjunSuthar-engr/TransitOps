@@ -21,6 +21,7 @@ export default function Drivers() {
   const [phone, setPhone] = useState('');
   const [licenseNumber, setLicenseNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
 
   const getDriverStatus = (driverId: string, baseStatus: string) => {
     const hasActiveTrip = trips.some(t => t.driver_id === driverId && t.status === 'in_progress');
@@ -36,13 +37,22 @@ export default function Drivers() {
   });
 
   const handleOpenModal = () => {
+    setEditingDriver(null);
     setFullName('');
     setPhone('');
     setLicenseNumber('');
     setIsOpen(true);
   };
 
-  const handleAddDriver = async () => {
+  const handleOpenEditModal = (driver: Driver) => {
+    setEditingDriver(driver);
+    setFullName(`${driver.first_name} ${driver.last_name}`.trim());
+    setPhone(driver.phone || '');
+    setLicenseNumber(driver.license_number);
+    setIsOpen(true);
+  };
+
+  const handleSaveDriver = async () => {
     if (!fullName || !licenseNumber) {
       alert('Please fill out Name and License Number.');
       return;
@@ -52,18 +62,29 @@ export default function Drivers() {
       const parts = fullName.trim().split(' ');
       const first_name = parts[0] || '';
       const last_name = parts.slice(1).join(' ') || '';
-      await driverService.create({
-        first_name,
-        last_name,
-        phone,
-        license_number: licenseNumber,
-        status: 'available'
-      });
+      
+      if (editingDriver) {
+        await driverService.update(editingDriver.id, {
+          first_name,
+          last_name,
+          phone,
+          license_number: licenseNumber
+        });
+      } else {
+        await driverService.create({
+          first_name,
+          last_name,
+          phone,
+          license_number: licenseNumber,
+          status: 'available'
+        });
+      }
+      
       const data = await driverService.getAll();
       setDrivers(data || []);
       setIsOpen(false);
     } catch (error) {
-      console.error('Failed to add driver:', error);
+      console.error('Failed to save driver:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -159,7 +180,7 @@ export default function Drivers() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="outline" size="sm">Edit</Button>
+                    <Button variant="outline" size="sm" onClick={() => handleOpenEditModal(driver)}>Edit</Button>
                   </TableCell>
                 </TableRow>
               );
@@ -172,12 +193,12 @@ export default function Drivers() {
       <Modal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        title="Add New Driver"
+        title={editingDriver ? "Edit Driver" : "Add New Driver"}
         footer={
           <>
             <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleAddDriver} disabled={isSubmitting}>
-              {isSubmitting ? 'Adding...' : 'Add Driver'}
+            <Button size="sm" onClick={handleSaveDriver} disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : editingDriver ? 'Save Changes' : 'Add Driver'}
             </Button>
           </>
         }
