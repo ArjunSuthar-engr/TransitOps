@@ -63,7 +63,9 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-full bg-brand-surface overflow-hidden border border-brand-border/60">
-              <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.full_name || 'Guest'}&backgroundColor=e2e8f0`} alt="Avatar" className="w-full h-full object-cover" />
+              <div className="w-full h-full flex items-center justify-center bg-brand-primary/10 text-brand-primary font-display font-bold text-lg">
+                {(profile?.full_name || 'Guest').charAt(0).toUpperCase()}
+              </div>
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold text-brand-primary leading-tight truncate max-w-[120px]">

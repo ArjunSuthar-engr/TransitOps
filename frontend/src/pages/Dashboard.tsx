@@ -930,11 +930,9 @@ export default function Dashboard() {
                 <p className="text-[10px] font-semibold text-brand-neutral-dark/40 uppercase tracking-wider mb-2">Assigned Driver</p>
                 {selectedTrip.driver ? (
                   <div className="flex items-center gap-3">
-                    <img
-                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedTrip.driver.first_name}&backgroundColor=e2e8f0`}
-                      alt="Driver"
-                      className="h-10 w-10 rounded-full border border-brand-border/60 bg-brand-surface"
-                    />
+                    <div className="h-10 w-10 flex items-center justify-center rounded-full border border-brand-border/60 bg-brand-primary/10 text-brand-primary font-display font-bold text-lg">
+                      {selectedTrip.driver.first_name.charAt(0).toUpperCase()}
+                    </div>
                     <div>
                       <p className="text-sm font-bold text-brand-primary">
                         {`${selectedTrip.driver.first_name} ${selectedTrip.driver.last_name}`}
