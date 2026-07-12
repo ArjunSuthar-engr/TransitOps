@@ -46,7 +46,15 @@ export default function Dashboard() {
         setTotalExpenses(total);
 
         const dData = await driverService.getAll();
-        setAvailableDrivers(dData.filter(d => d.status === 'available') || []);
+        const available = dData.filter(d => d.status === 'available') || [];
+        // Mock first 3 as Driver 1, 2, 3 for assignment UI
+        available.forEach((d, i) => {
+          if (i < 3) {
+            d.first_name = 'Driver';
+            d.last_name = `${i + 1}`;
+          }
+        });
+        setAvailableDrivers(available);
         const vData = await vehicleService.getAll();
         setAvailableVehicles(vData.filter(v => v.status === 'active') || []);
       } catch (error) {
@@ -329,6 +337,82 @@ export default function Dashboard() {
     { label: 'In Progress', value: 'in_progress' },
     { label: 'Completed', value: 'completed' },
   ];
+
+  if (role === 'driver') {
+    const activeTrip = trips.find(t => t.status === 'in_progress') || trips.find(t => t.status === 'scheduled') || trips[0];
+
+    return (
+      <div className="flex flex-col gap-6 w-full p-4 sm:p-6 lg:p-8 font-sans max-w-2xl mx-auto min-h-screen">
+        <div className="bg-brand-surface rounded-[2rem] p-8 shadow-sm border border-brand-border/40 text-center">
+          <div className="w-20 h-20 bg-brand-primary rounded-full mx-auto flex items-center justify-center mb-5 shadow-xl shadow-brand-primary/20">
+            <span className="text-3xl">🚚</span>
+          </div>
+          <h1 className="text-3xl font-display font-bold text-brand-primary">Welcome, Driver!</h1>
+          <p className="text-brand-neutral-dark/50 mt-1 font-medium">Role: Driver</p>
+        </div>
+
+        {activeTrip ? (
+          <div className="bg-[#0C0D0D] text-white rounded-[2rem] p-8 shadow-2xl relative overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="absolute top-0 right-0 bg-brand-primary px-6 py-2 rounded-bl-3xl text-[10px] font-bold uppercase tracking-wider">
+              {activeTrip.status.replace('_', ' ')}
+            </div>
+            
+            <h2 className="text-xl font-display font-bold mb-8">Current Assignment</h2>
+            
+            <div className="flex flex-col gap-8">
+              <div className="flex gap-5 items-start">
+                <div className="flex flex-col items-center mt-1.5">
+                  <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]" />
+                  <div className="w-0.5 h-16 bg-white/10 my-2" />
+                  <div className="w-3.5 h-3.5 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.4)]" />
+                </div>
+                <div className="flex flex-col gap-8 flex-1">
+                  <div>
+                    <p className="text-[11px] text-white/40 font-bold uppercase tracking-widest mb-1.5">Pickup Location</p>
+                    <p className="text-lg font-bold text-white leading-tight">{activeTrip.start_location}</p>
+                    <p className="text-[13px] text-white/60 mt-1">{formatDateTime(activeTrip.start_time)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-white/40 font-bold uppercase tracking-widest mb-1.5">Delivery Destination</p>
+                    <p className="text-lg font-bold text-white leading-tight">{activeTrip.end_location}</p>
+                    <p className="text-[13px] text-white/60 mt-1">Est. Arrival: {formatDateTime(activeTrip.end_time || '')}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {activeTrip.status === 'in_progress' && (
+              <button
+                onClick={() => handleUpdateTripStatus(activeTrip.id, activeTrip.status)}
+                className="mt-10 w-full py-4 rounded-2xl bg-emerald-500 text-white text-[15px] font-bold hover:bg-emerald-600 transition-colors shadow-xl shadow-emerald-500/20 active:scale-[0.98]"
+              >
+                Mark as Completed
+              </button>
+            )}
+            
+            {activeTrip.status === 'scheduled' && (
+              <button
+                onClick={() => handleUpdateTripStatus(activeTrip.id, activeTrip.status)}
+                className="mt-10 w-full py-4 rounded-2xl bg-brand-primary text-white text-[15px] font-bold hover:bg-brand-primary/90 transition-colors shadow-xl shadow-brand-primary/20 active:scale-[0.98]"
+              >
+                Start Trip Now
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-[2rem] p-10 shadow-sm border border-brand-border/40 text-center">
+            <div className="w-16 h-16 bg-brand-surface rounded-full mx-auto flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-brand-neutral-dark/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-brand-primary">No Active Trips</h3>
+            <p className="text-brand-neutral-dark/60 mt-2">You're all caught up! Check back later for new assignments.</p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8 w-full pb-10 font-sans relative">

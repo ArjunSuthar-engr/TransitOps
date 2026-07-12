@@ -42,6 +42,13 @@ const DEMO_ACCOUNTS = [
     email: 'driver2@transitops.com',
     password: 'Transit@Driver2',
   },
+  {
+    label: 'Driver 3',
+    roleType: 'driver' as Role,
+    icon: '🚚',
+    email: 'driver3@transitops.com',
+    password: 'Transit@Driver3',
+  },
 ];
 
 export default function Login() {
