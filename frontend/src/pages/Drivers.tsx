@@ -44,6 +44,24 @@ export default function Drivers() {
     setIsOpen(true);
   };
 
+  const handleFillDemoDriver = () => {
+    const demoDrivers = drivers.filter(d => d.first_name === 'Demo');
+    let maxNum = 0;
+
+    demoDrivers.forEach(d => {
+      const num = parseInt(d.last_name.replace('Driver ', ''), 10);
+      if (!isNaN(num) && num > maxNum) maxNum = num;
+    });
+
+    const nextNum = maxNum + 1;
+
+    setEditingDriver(null);
+    setFullName(`Demo Driver ${nextNum}`);
+    setPhone(`+1 555-01${nextNum.toString().padStart(2, '0')}`);
+    setLicenseNumber(`DEMO-DL-${nextNum.toString().padStart(4, '0')}`);
+    setIsOpen(true);
+  };
+
   const handleOpenEditModal = (driver: Driver) => {
     setEditingDriver(driver);
     setFullName(`${driver.first_name} ${driver.last_name}`.trim());
@@ -209,12 +227,17 @@ export default function Drivers() {
         onClose={() => setIsOpen(false)}
         title={editingDriver ? "Edit Driver" : "Add New Driver"}
         footer={
-          <>
-            <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleSaveDriver} disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : editingDriver ? 'Save Changes' : 'Add Driver'}
+          <div className="flex w-full items-center justify-between gap-3">
+            <Button variant="outline" size="sm" onClick={handleFillDemoDriver}>
+              Add Demo Driver
             </Button>
-          </>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>Cancel</Button>
+              <Button size="sm" onClick={handleSaveDriver} disabled={isSubmitting}>
+                {isSubmitting ? 'Saving...' : editingDriver ? 'Save Changes' : 'Add Driver'}
+              </Button>
+            </div>
+          </div>
         }
       >
         <div className="flex flex-col gap-4">
