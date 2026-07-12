@@ -29,7 +29,7 @@ Supabase (Auth + PostgreSQL + RLS)
 
 *Application functional modules (Pending Phase 1+)*:
 - [x] Supabase Database Schema & Seeding
-- [ ] Local App Routing & Navigation Layouts
+- [x] Local App Routing & Navigation Layouts
 - [x] User Session Authentication (Login/Logout)
 - [ ] Vehicles CRUD Grid & Actions
 - [ ] Drivers CRUD Grid & Actions
