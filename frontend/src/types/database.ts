@@ -29,8 +29,8 @@ export type TripStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
 
 export interface Trip {
   id: string;
-  vehicle_id: string;
-  driver_id: string;
+  vehicle_id: string | null;
+  driver_id: string | null;
   start_location: string;
   end_location: string;
   start_time: string;
