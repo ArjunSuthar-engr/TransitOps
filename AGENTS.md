@@ -38,8 +38,9 @@ This file details instructions, project setup, rules, and style guides for AI co
 ---
 
 ## Git Rules
-* **Branching**: Never modify or push directly to `main` (or `master`). Always work on feature-specific branches.
-* **Commits**: Keep commits small, atomic, and focused on a single change. Follow the commit prefix rules (e.g., `feat(scope):`, `fix(scope):`).
+* **Branching**: The active branches are `main`, `feature/frontend` (Arjun), `feature/app-logic` (Janak), and `feature/database` (Rajkumar). Every developer works only on their own feature branch. Pull from `main` before starting work. Push changes to your feature branch, perform a quick 30–60 second build check with a teammate, and merge into `main`.
+* **Commits**: Keep commits small, atomic, and frequent. Follow conventional commit prefix rules (e.g., `feat(scope):`, `fix(scope):`, `docs(scope):`).
+* **Laptop Sharing**: Because developers may share a single laptop, it is acceptable to switch branches locally, commit individually, and append `Co-authored-by: Name <email>` trailers in the commit description when both contributed.
 
 ---
 

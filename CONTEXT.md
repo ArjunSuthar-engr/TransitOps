@@ -2,7 +2,7 @@
 
 * **Current Project**: TransitOps
 * **Current Phase**: Phase 1 (Core Foundations)
-* **Current Branch**: `feature/backend-janak`
+* **Current Branch**: `feature/app-logic`
 * **Current Sprint Goal**: Complete Phase 2 Authentication and Phase 3/4 Services.
 
 ---
@@ -45,7 +45,7 @@ Supabase (Auth + PostgreSQL + RLS)
 
 * **Developer**: Janak (Application Logic Engineer)
 * **Current Task**: Implemented Supabase Client, Authentication hooks, CRUD Services, and Business Rules.
-* **Current Branch**: `feature/backend-janak`
+* **Current Branch**: `feature/app-logic`
 * **Files Being Modified**: `frontend/src/services/`, `frontend/src/hooks/`, `frontend/src/utils/`, `frontend/src/types/`
 * **Expected Output**: Reusable services and hooks ready for UI integration by Arjun.
 
@@ -54,28 +54,13 @@ Supabase (Auth + PostgreSQL + RLS)
 ## 👥 Team Responsibilities
 
 * **Arjun**
-  * Frontend
-  * UI
-  * Pages
-  * Components
-  * Layouts
+  * Frontend (React, Tailwind, UI, Pages, Components)
 
 * **Janak**
-  * Application Logic
-  * Supabase Integration
-  * Authentication
-  * Services
-  * Hooks
-  * Utilities
-  * Business Rules
+  * Application Logic (Supabase integration, Services, Authentication, Business Rules)
 
 * **Rajkumar**
-  * Database
-  * Supabase
-  * Deployment
-  * Environment
-  * Seed Data
-  * RLS
+  * Database & Infrastructure (Supabase, SQL, RLS, Seed Data, Deployment Support)
 
 ---
 

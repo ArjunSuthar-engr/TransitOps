@@ -96,10 +96,5 @@ Since the runtime architecture requires no active node backend, the deployment p
 * (Optional) Run the SQL commands in `database/seed.sql` to populate the database with mock vehicles, drivers, and user roles for testing.
 
 ### 2. Frontend Hosting
-* Build the static files:
-  ```bash
-  cd frontend
-  npm run build
-  ```
-* Deploy the resulting `dist/` directory directly to standard static hosts such as **Vercel**, **Netlify**, or **GitHub Pages**.
-* Add the environment variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to your static host project configuration settings.
+* **Automatic Vercel Deployment**: Any merge or push into the `main` branch automatically triggers a production build and deployment to Vercel. No manual folder uploads or specific deployment branches are required.
+* Ensure you configure the environment variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in your Vercel project settings dashboard.
