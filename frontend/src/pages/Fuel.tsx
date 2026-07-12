@@ -106,17 +106,16 @@ export default function Fuel() {
             <TableHeaderCell>Quantity (Liters)</TableHeaderCell>
             <TableHeaderCell>Cost</TableHeaderCell>
             <TableHeaderCell>Fill Date</TableHeaderCell>
-            <TableHeaderCell className="text-right">Actions</TableHeaderCell>
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">Loading fuel logs...</TableCell>
+              <TableCell colSpan={4} className="text-center py-8 text-brand-neutral-dark/60">Loading fuel logs...</TableCell>
             </TableRow>
           ) : filteredFuelLogs.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">No fuel logs found.</TableCell>
+              <TableCell colSpan={4} className="text-center py-8 text-brand-neutral-dark/60">No fuel logs found.</TableCell>
             </TableRow>
           ) : (
             filteredFuelLogs.map((log) => (
@@ -127,9 +126,6 @@ export default function Fuel() {
                 <TableCell>{log.quantity_liters} L</TableCell>
                 <TableCell className="font-semibold text-brand-primary dark:text-white">₹{Number(log.cost).toLocaleString('en-IN')}</TableCell>
                 <TableCell>{formatDate(log.fuel_date)}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="outline" size="sm">Edit</Button>
-                </TableCell>
               </TableRow>
             ))
           )}

@@ -111,9 +111,6 @@ export default function Maintenance() {
                   </div>
                 </CardContent>
               </div>
-              <CardFooter className="bg-brand-surface/20">
-                <Button variant="outline" size="sm" className="w-full">Manage Service</Button>
-              </CardFooter>
             </Card>
           ))
         )}

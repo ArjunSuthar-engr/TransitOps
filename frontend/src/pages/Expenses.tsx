@@ -94,17 +94,16 @@ export default function Expenses() {
             <TableHeaderCell>Amount</TableHeaderCell>
             <TableHeaderCell>Expense Date</TableHeaderCell>
             <TableHeaderCell>Description</TableHeaderCell>
-            <TableHeaderCell className="text-right">Actions</TableHeaderCell>
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">Loading expenses...</TableCell>
+              <TableCell colSpan={4} className="text-center py-8 text-brand-neutral-dark/60">Loading expenses...</TableCell>
             </TableRow>
           ) : filteredExpenses.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">No expenses found.</TableCell>
+              <TableCell colSpan={4} className="text-center py-8 text-brand-neutral-dark/60">No expenses found.</TableCell>
             </TableRow>
           ) : (
             filteredExpenses.map((expense) => (
@@ -117,9 +116,6 @@ export default function Expenses() {
                 <TableCell className="font-semibold text-brand-primary dark:text-white">₹{Number(expense.amount).toLocaleString('en-IN')}</TableCell>
                 <TableCell>{formatDate(expense.expense_date)}</TableCell>
                 <TableCell>{expense.description}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="outline" size="sm">Edit</Button>
-                </TableCell>
               </TableRow>
             ))
           )}
