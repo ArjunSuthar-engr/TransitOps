@@ -689,7 +689,6 @@ export default function Dashboard() {
                 <span>{fulfillmentSummary.created ? `${fulfillmentSummary.rate}% of created today` : 'No trips created today'}</span>
               </div>
             </div>
-            </div>
           </div>
 
           {/* RIGHT: Total Expenses */}
