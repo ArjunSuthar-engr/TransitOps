@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { authService } from '@/services/authService';
 import type { User } from '@/types/database';
 import { useRole } from '@/contexts/RoleContext';
-import type { Role } from '@/contexts/RoleContext';
 
 interface SidebarProps {
   onCloseMobile?: () => void;
@@ -13,7 +12,7 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
   const [profile, setProfile] = useState<User | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
-  const { role, setRole } = useRole();
+  const { role } = useRole();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -87,26 +86,11 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
           </button>
         </div>
 
-        {/* Expandable Sign Out & Role Switcher row — smooth max-height animation */}
+        {/* Expandable Sign Out row — smooth max-height animation */}
         <div
           className="overflow-hidden transition-all duration-300 ease-in-out"
-          style={{ maxHeight: isExpanded ? '180px' : '0px' }}
+          style={{ maxHeight: isExpanded ? '60px' : '0px' }}
         >
-          <div className="border-t border-brand-border/30 p-2 flex flex-col gap-1">
-            <p className="px-2 pt-1 pb-1 text-[10px] font-bold text-brand-neutral-dark/40 uppercase tracking-wider">Simulate Role</p>
-            {(['admin', 'fleet_manager', 'dispatcher'] as Role[]).map(r => (
-              <button
-                key={r}
-                onClick={() => setRole(r)}
-                className={`flex w-full items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                  role === r ? 'bg-brand-primary text-white' : 'text-brand-neutral-dark/70 hover:bg-brand-surface'
-                }`}
-              >
-                <div className={`w-1.5 h-1.5 rounded-full ${role === r ? 'bg-white' : 'bg-brand-border/60'}`} />
-                {r.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
-              </button>
-            ))}
-          </div>
           <div className="border-t border-brand-border/30">
             <button
               onClick={handleSignOut}
