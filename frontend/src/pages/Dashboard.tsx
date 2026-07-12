@@ -656,9 +656,9 @@ export default function Dashboard() {
 
           {/* LEFT: Fulfillment Performance */}
           <div className="flex flex-col">
-            <div className="flex justify-between items-center mb-3">
+            <div className="flex flex-col items-start gap-2 mb-3">
               <h3 className="text-base font-sans font-medium text-brand-primary">Fulfillment Performance</h3>
-              <span className="inline-flex items-center gap-1.5 rounded-md border border-brand-border/60 bg-white px-2 py-1 text-[10px] font-bold text-brand-neutral-dark/60 shadow-sm">
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-brand-border/60 bg-white px-2 py-1 text-[10px] font-bold text-brand-neutral-dark/60 shadow-sm ml-1">
                 {fulfillmentSummary.rate}% fulfilled · {fulfillmentSummary.completed}/{fulfillmentSummary.created || 0}
               </span>
             </div>
