@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { StatCard } from '@/components/ui/StatCard';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { expenseService } from '@/services/expenseService';
 import { tripService } from '@/services/tripService';
 import { fuelService } from '@/services/fuelService';
@@ -140,7 +139,6 @@ export default function Reports() {
         <PageHeader
           title="Reports & Analytics"
           description="Operational cost trends, active metrics, fuel logs, and efficiency indicators."
-          actions={<Button size="sm" disabled>Export Data</Button>}
         />
         <div className="flex items-center justify-center h-96 text-brand-neutral-dark/60 font-semibold">
           Generating operational reports...
@@ -162,7 +160,6 @@ export default function Reports() {
       <PageHeader
         title="Reports & Analytics"
         description="Operational cost trends, active metrics, fuel logs, and efficiency indicators."
-        actions={<Button size="sm">Export Data</Button>}
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -238,11 +235,11 @@ export default function Reports() {
                   <span className="font-semibold text-brand-neutral-dark">Fuel ({expenseDist.fuelPct}%)</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded bg-[#A5D48C] inline-block"></span>
+                  <span className="h-2.5 w-2.5 rounded bg-brand-success inline-block"></span>
                   <span className="font-semibold text-brand-neutral-dark">Service ({expenseDist.maintPct}%)</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded bg-[#363236] inline-block"></span>
+                  <span className="h-2.5 w-2.5 rounded bg-brand-neutral-dark inline-block"></span>
                   <span className="font-semibold text-brand-neutral-dark">Other ({expenseDist.otherPct}%)</span>
                 </div>
               </div>

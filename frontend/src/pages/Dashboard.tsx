@@ -611,12 +611,6 @@ export default function Dashboard() {
           <div id="search-sentinel" className="absolute top-10 h-px w-full pointer-events-none" />
 
           <div className="flex items-center gap-3 sm:gap-5">
-            <button className="flex items-center gap-2 text-[13px] font-semibold text-brand-primary hover:opacity-70 transition-opacity">
-              <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
-              Export
-            </button>
             <div className="relative w-[172px] h-[40px]">
               {showCreateModal && (
                 <div className="fixed inset-0 z-40" onClick={() => setShowCreateModal(false)} />
