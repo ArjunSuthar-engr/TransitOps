@@ -935,11 +935,14 @@ export default function Dashboard() {
                         value=""
                       >
                         <option value="" disabled>Select an available driver...</option>
-                        {availableDrivers.map(d => (
-                          <option key={d.id} value={d.id}>
-                            {d.first_name} {d.last_name} {d.status === 'on_trip' ? '(Occupied - assign after current trip)' : ''}
-                          </option>
-                        ))}
+                        {availableDrivers.map(d => {
+                          const isOccupied = d.status === 'on_trip' || trips.some(t => t.driver_id === d.id && t.status === 'in_progress');
+                          return (
+                            <option key={d.id} value={d.id}>
+                              {d.first_name} {d.last_name} {isOccupied ? '(Occupied - assign after current trip)' : ''}
+                            </option>
+                          );
+                        })}
                       </select>
                     )}
                   </div>
