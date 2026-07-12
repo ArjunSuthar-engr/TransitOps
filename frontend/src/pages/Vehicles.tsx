@@ -81,6 +81,17 @@ export default function Vehicles() {
     }
   };
 
+  const handleDeleteVehicle = async (vehicleId: string, regNo: string) => {
+    if (!window.confirm(`Are you sure you want to delete vehicle ${regNo}?`)) return;
+    try {
+      await vehicleService.delete(vehicleId);
+      const data = await vehicleService.getAll();
+      setVehicles(data || []);
+    } catch (error) {
+      console.error('Failed to delete vehicle:', error);
+    }
+  };
+
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
@@ -142,16 +153,17 @@ export default function Vehicles() {
             <TableHeaderCell>Year</TableHeaderCell>
             <TableHeaderCell>Capacity</TableHeaderCell>
             <TableHeaderCell>Status</TableHeaderCell>
+            <TableHeaderCell className="text-right">Actions</TableHeaderCell>
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">Loading vehicles...</TableCell>
+              <TableCell colSpan={6} className="text-center py-8 text-brand-neutral-dark/60">Loading vehicles...</TableCell>
             </TableRow>
           ) : filteredVehicles.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">No vehicles found.</TableCell>
+              <TableCell colSpan={6} className="text-center py-8 text-brand-neutral-dark/60">No vehicles found.</TableCell>
             </TableRow>
           ) : (
             filteredVehicles.map((vehicle) => (
@@ -164,6 +176,9 @@ export default function Vehicles() {
                   <Badge variant={vehicle.status === 'active' ? 'success' : vehicle.status === 'in_maintenance' ? 'warning' : 'danger'}>
                     {vehicle.status ? vehicle.status.replace(/_/g, ' ') : 'Unknown'}
                   </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button variant="outline" size="sm" className="text-red-500 hover:bg-red-50 hover:border-red-300 border-brand-border/60" onClick={() => handleDeleteVehicle(vehicle.id, vehicle.registration_number)}>Delete</Button>
                 </TableCell>
               </TableRow>
             ))

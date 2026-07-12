@@ -90,6 +90,17 @@ export default function Drivers() {
     }
   };
 
+  const handleDeleteDriver = async (driverId: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete driver ${name}?`)) return;
+    try {
+      await driverService.delete(driverId);
+      const data = await driverService.getAll();
+      setDrivers(data || []);
+    } catch (error) {
+      console.error('Failed to delete driver:', error);
+    }
+  };
+
   useEffect(() => {
     const fetchDriversAndTrips = async () => {
       try {
@@ -179,8 +190,11 @@ export default function Drivers() {
                       {computedStatus ? computedStatus.replace('_', ' ') : 'Unknown'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="outline" size="sm" onClick={() => handleOpenEditModal(driver)}>Edit</Button>
+                  <TableCell className="text-right text-right-actions">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleOpenEditModal(driver)}>Edit</Button>
+                      <Button variant="outline" size="sm" className="text-red-500 hover:bg-red-50 hover:border-red-300 border-brand-border/60" onClick={() => handleDeleteDriver(driver.id, `${driver.first_name} ${driver.last_name}`)}>Delete</Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
