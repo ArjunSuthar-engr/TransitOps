@@ -1,7 +1,10 @@
 import { useEffect, useState, useMemo } from 'react';
 import { tripService } from '@/services/tripService';
 import { expenseService } from '@/services/expenseService';
+import { driverService } from '@/services/driverService';
+import { vehicleService } from '@/services/vehicleService';
 import dayjs from 'dayjs';
+import { useRole } from '@/contexts/RoleContext';
 
 type FilterType = 'all' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 
@@ -15,6 +18,21 @@ export default function Dashboard() {
   const [selectedTrip, setSelectedTrip] = useState<any | null>(null);
   const [showStickySearch, setShowStickySearch] = useState(false);
   const [showStickyFilters, setShowStickyFilters] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newPickup, setNewPickup] = useState('');
+  const [newDelivery, setNewDelivery] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availableDrivers, setAvailableDrivers] = useState<any[]>([]);
+  const [availableVehicles, setAvailableVehicles] = useState<any[]>([]);
+  const { role } = useRole();
+
+  const handleStickyInteraction = () => {
+    const sentinel = document.getElementById('filters-sentinel');
+    if (sentinel) {
+      const y = sentinel.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: y + 1, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -26,6 +44,19 @@ export default function Dashboard() {
         setExpenses(expensesData || []);
         const total = (expensesData || []).reduce((acc, curr) => acc + Number(curr.amount), 0);
         setTotalExpenses(total);
+
+        const dData = await driverService.getAll();
+        const available = dData.filter(d => d.status === 'available') || [];
+        // Mock first 3 as Driver 1, 2, 3 for assignment UI
+        available.forEach((d, i) => {
+          if (i < 3) {
+            d.first_name = 'Driver';
+            d.last_name = `${i + 1}`;
+          }
+        });
+        setAvailableDrivers(available);
+        const vData = await vehicleService.getAll();
+        setAvailableVehicles(vData.filter(v => v.status === 'active') || []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -199,6 +230,15 @@ export default function Dashboard() {
     return new Date(dateString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
+  const availableLocations = useMemo(() => {
+    const locs = new Set<string>();
+    trips.forEach(t => {
+      if (t.start_location) locs.add(t.start_location);
+      if (t.end_location) locs.add(t.end_location);
+    });
+    return Array.from(locs).sort();
+  }, [trips]);
+
   const formatDateTime = (dateString: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -227,12 +267,152 @@ export default function Dashboard() {
     return status.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   };
 
+  const handleCreateTrip = async () => {
+    if (!newPickup || !newDelivery) return;
+    setIsSubmitting(true);
+    try {
+      // Create an unassigned trip. Use dayjs() as the exact creation time.
+      await tripService.create({
+        vehicle_id: null,
+        driver_id: null,
+        start_location: newPickup,
+        end_location: newDelivery,
+        start_time: dayjs().toISOString(),
+        end_time: null,
+        status: 'scheduled'
+      });
+      // Refresh trips
+      const fetchedTrips = await tripService.getDashboardTrips();
+      setTrips(fetchedTrips || []);
+      
+      setNewPickup('');
+      setNewDelivery('');
+      setShowCreateModal(false);
+    } catch (err) {
+      console.error('Failed to create trip:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAssignResource = async (tripId: string, field: 'driver_id' | 'vehicle_id', value: string) => {
+    try {
+      await tripService.update(tripId, { [field]: value });
+      const fetchedTrips = await tripService.getDashboardTrips();
+      setTrips(fetchedTrips || []);
+      const updatedTrip = fetchedTrips?.find((t: any) => t.id === tripId);
+      if (updatedTrip) setSelectedTrip(updatedTrip);
+    } catch (err) {
+      console.error('Failed to assign resource:', err);
+    }
+  };
+
+  const handleUpdateTripStatus = async (tripId: string, currentStatus: string) => {
+    try {
+      let nextStatus = currentStatus;
+      let updates: any = {};
+      if (currentStatus === 'scheduled') {
+        nextStatus = 'in_progress';
+      } else if (currentStatus === 'in_progress') {
+        nextStatus = 'completed';
+        updates.end_time = dayjs().toISOString();
+      } else {
+        return;
+      }
+      updates.status = nextStatus;
+      await tripService.update(tripId, updates);
+      
+      const fetchedTrips = await tripService.getDashboardTrips();
+      setTrips(fetchedTrips || []);
+      const updatedTrip = fetchedTrips?.find((t: any) => t.id === tripId);
+      if (updatedTrip) setSelectedTrip(updatedTrip);
+    } catch (err) {
+      console.error('Failed to update status:', err);
+    }
+  };
+
   const FILTERS: { label: string; value: FilterType }[] = [
     { label: 'All', value: 'all' },
     { label: 'Scheduled', value: 'scheduled' },
     { label: 'In Progress', value: 'in_progress' },
     { label: 'Completed', value: 'completed' },
   ];
+
+  if (role === 'driver') {
+    const activeTrip = trips.find(t => t.status === 'in_progress') || trips.find(t => t.status === 'scheduled') || trips[0];
+
+    return (
+      <div className="flex flex-col gap-6 w-full p-4 sm:p-6 lg:p-8 font-sans max-w-2xl mx-auto min-h-screen">
+        <div className="bg-brand-surface rounded-[2rem] p-8 shadow-sm border border-brand-border/40 text-center">
+          <div className="w-20 h-20 bg-brand-primary rounded-full mx-auto flex items-center justify-center mb-5 shadow-xl shadow-brand-primary/20">
+            <span className="text-3xl">🚚</span>
+          </div>
+          <h1 className="text-3xl font-display font-bold text-brand-primary">Welcome, Driver!</h1>
+          <p className="text-brand-neutral-dark/50 mt-1 font-medium">Role: Driver</p>
+        </div>
+
+        {activeTrip ? (
+          <div className="bg-[#0C0D0D] text-white rounded-[2rem] p-8 shadow-2xl relative overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="absolute top-0 right-0 bg-brand-primary px-6 py-2 rounded-bl-3xl text-[10px] font-bold uppercase tracking-wider">
+              {activeTrip.status.replace('_', ' ')}
+            </div>
+            
+            <h2 className="text-xl font-display font-bold mb-8">Current Assignment</h2>
+            
+            <div className="flex flex-col gap-8">
+              <div className="flex gap-5 items-start">
+                <div className="flex flex-col items-center mt-1.5">
+                  <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]" />
+                  <div className="w-0.5 h-16 bg-white/10 my-2" />
+                  <div className="w-3.5 h-3.5 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.4)]" />
+                </div>
+                <div className="flex flex-col gap-8 flex-1">
+                  <div>
+                    <p className="text-[11px] text-white/40 font-bold uppercase tracking-widest mb-1.5">Pickup Location</p>
+                    <p className="text-lg font-bold text-white leading-tight">{activeTrip.start_location}</p>
+                    <p className="text-[13px] text-white/60 mt-1">{formatDateTime(activeTrip.start_time)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-white/40 font-bold uppercase tracking-widest mb-1.5">Delivery Destination</p>
+                    <p className="text-lg font-bold text-white leading-tight">{activeTrip.end_location}</p>
+                    <p className="text-[13px] text-white/60 mt-1">Est. Arrival: {formatDateTime(activeTrip.end_time || '')}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {activeTrip.status === 'in_progress' && (
+              <button
+                onClick={() => handleUpdateTripStatus(activeTrip.id, activeTrip.status)}
+                className="mt-10 w-full py-4 rounded-2xl bg-emerald-500 text-white text-[15px] font-bold hover:bg-emerald-600 transition-colors shadow-xl shadow-emerald-500/20 active:scale-[0.98]"
+              >
+                Mark as Completed
+              </button>
+            )}
+            
+            {activeTrip.status === 'scheduled' && (
+              <button
+                onClick={() => handleUpdateTripStatus(activeTrip.id, activeTrip.status)}
+                className="mt-10 w-full py-4 rounded-2xl bg-brand-primary text-white text-[15px] font-bold hover:bg-brand-primary/90 transition-colors shadow-xl shadow-brand-primary/20 active:scale-[0.98]"
+              >
+                Start Trip Now
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-[2rem] p-10 shadow-sm border border-brand-border/40 text-center">
+            <div className="w-16 h-16 bg-brand-surface rounded-full mx-auto flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-brand-neutral-dark/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-brand-primary">No Active Trips</h3>
+            <p className="text-brand-neutral-dark/60 mt-2">You're all caught up! Check back later for new assignments.</p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8 w-full pb-10 font-sans relative">
@@ -253,6 +433,7 @@ export default function Dashboard() {
             placeholder="Search orders, drivers..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={handleStickyInteraction}
             className="w-full pl-9 pr-4 py-1.5 bg-brand-surface border border-brand-border/60 rounded-xl focus:outline-none text-sm placeholder:text-brand-neutral-dark/50 text-brand-primary"
           />
         </div>
@@ -266,7 +447,10 @@ export default function Dashboard() {
           {FILTERS.map(f => (
             <button
               key={`sticky-${f.value}`}
-              onClick={() => setActiveFilter(f.value)}
+              onClick={() => {
+                setActiveFilter(f.value);
+                handleStickyInteraction();
+              }}
               className={`px-4 py-1.5 rounded-xl text-[12px] font-semibold shadow-sm whitespace-nowrap transition-colors ${
                 activeFilter === f.value
                   ? 'bg-brand-primary text-white'
@@ -307,17 +491,95 @@ export default function Dashboard() {
               </svg>
               Export
             </button>
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-white text-[13px] font-semibold rounded-[14px] hover:bg-brand-primary/90 transition-colors shadow-sm">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-              </svg>
-              Add new shipment
-            </button>
+            <div className="relative w-[172px] h-[40px]">
+              {showCreateModal && (
+                <div className="fixed inset-0 z-40" onClick={() => setShowCreateModal(false)} />
+              )}
+              
+              <div 
+                className={`absolute right-0 top-0 bg-[#0C0D0D] text-white overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-50 ${
+                  showCreateModal 
+                    ? 'w-[320px] h-[340px] rounded-2xl border border-white/10 shadow-2xl cursor-default' 
+                    : 'w-[172px] h-[40px] rounded-[14px] cursor-pointer hover:bg-black shadow-sm'
+                }`}
+                onClick={() => {
+                  if (!showCreateModal) setShowCreateModal(true);
+                }}
+              >
+                {/* Button State */}
+                <div 
+                  className={`absolute inset-0 flex items-center justify-center gap-2 px-5 transition-opacity duration-300 ${
+                    showCreateModal ? 'opacity-0 pointer-events-none' : 'opacity-100 delay-200'
+                  }`}
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span className="text-[13px] font-semibold whitespace-nowrap">Add new shipment</span>
+                </div>
+
+                {/* Form State */}
+                <div 
+                  className={`absolute top-0 right-0 w-[320px] p-5 flex flex-col gap-4 transition-opacity duration-500 ${
+                    showCreateModal ? 'opacity-100 delay-150' : 'opacity-0 pointer-events-none'
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="text-[14px] font-bold text-white mb-1">Create Shipment</h4>
+                      <p className="text-[11px] text-white/50 font-medium leading-tight">
+                        The order will be scheduled instantly.
+                      </p>
+                    </div>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setShowCreateModal(false); }} 
+                      className="text-white/40 hover:text-white transition-colors mt-0.5"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-white/70">Pickup Location</label>
+                    <input 
+                      type="text" 
+                      list="locations"
+                      placeholder="e.g. Warehouse A"
+                      value={newPickup}
+                      onChange={e => setNewPickup(e.target.value)}
+                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:border-white/40 text-xs font-semibold text-white placeholder:text-white/30"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-white/70">Delivery Location</label>
+                    <input 
+                      type="text" 
+                      list="locations"
+                      placeholder="e.g. Pune Hub"
+                      value={newDelivery}
+                      onChange={e => setNewDelivery(e.target.value)}
+                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:border-white/40 text-xs font-semibold text-white placeholder:text-white/30"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleCreateTrip}
+                    disabled={isSubmitting || !newPickup || !newDelivery}
+                    className="mt-2 w-full py-2.5 rounded-xl bg-white text-[#0C0D0D] text-[13px] font-bold hover:bg-gray-200 transition-colors disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Creating...' : 'Create Order'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+        <div className={`grid grid-cols-1 ${role !== 'dispatcher' ? 'lg:grid-cols-2' : ''} gap-12 lg:gap-16`}>
 
           {/* LEFT: Fulfillment Performance */}
           <div className="flex flex-col">
@@ -354,9 +616,10 @@ export default function Dashboard() {
           </div>
 
           {/* RIGHT: Total Expenses */}
-          <div className="flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-base font-sans font-medium text-brand-primary">Total Expenses</h3>
+          {role !== 'dispatcher' && (
+            <div className="flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-sans font-medium text-brand-primary">Total Expenses</h3>
               <div className="flex gap-2">
                 <button className="h-9 w-9 flex items-center justify-center rounded-[10px] bg-white border border-brand-border/40 shadow-sm text-brand-primary hover:bg-brand-surface">
                   <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -412,14 +675,17 @@ export default function Dashboard() {
               <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-neutral-dark/30" />Q4</div>
             </div>
           </div>
+          )}
         </div>
       </div>
 
       {/* ── LIVE ORDERS SECTION ── */}
-      <div className="w-full relative">
+      <div className="w-full relative min-h-screen">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 px-2">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-sans font-medium text-brand-primary">Live Orders</h2>
+            <h2 className="text-xl font-sans font-medium text-brand-primary">
+              {FILTERS.find(f => f.value === activeFilter)?.label || 'All'} Orders
+            </h2>
             <span className="px-2.5 py-1 rounded-lg bg-white border border-brand-border/60 text-xs font-bold text-brand-neutral-dark/70 shadow-sm">
               {filteredTrips.length}
             </span>
@@ -534,19 +800,37 @@ export default function Dashboard() {
 
               <div className="rounded-2xl border border-brand-border/40 p-4">
                 <p className="text-[10px] font-semibold text-brand-neutral-dark/40 uppercase tracking-wider mb-2">Assigned Driver</p>
-                <div className="flex items-center gap-3">
-                  <img
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedTrip.driver?.first_name || 'Unknown'}&backgroundColor=e2e8f0`}
-                    alt="Driver"
-                    className="h-10 w-10 rounded-full border border-brand-border/60 bg-brand-surface"
-                  />
-                  <div>
-                    <p className="text-sm font-bold text-brand-primary">
-                      {selectedTrip.driver ? `${selectedTrip.driver.first_name} ${selectedTrip.driver.last_name}` : 'Unassigned'}
-                    </p>
-                    <p className="text-[11px] text-brand-neutral-dark/50">Driver</p>
+                {selectedTrip.driver ? (
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedTrip.driver.first_name}&backgroundColor=e2e8f0`}
+                      alt="Driver"
+                      className="h-10 w-10 rounded-full border border-brand-border/60 bg-brand-surface"
+                    />
+                    <div>
+                      <p className="text-sm font-bold text-brand-primary">
+                        {`${selectedTrip.driver.first_name} ${selectedTrip.driver.last_name}`}
+                      </p>
+                      <p className="text-[11px] text-brand-neutral-dark/50">Driver</p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm font-semibold text-brand-primary">Unassigned</p>
+                    {(role === 'dispatcher' || role === 'admin') && (
+                      <select 
+                        className="w-full px-3 py-2 bg-brand-surface border border-brand-border/60 rounded-lg focus:outline-none text-xs font-semibold text-brand-primary"
+                        onChange={(e) => handleAssignResource(selectedTrip.id, 'driver_id', e.target.value)}
+                        value=""
+                      >
+                        <option value="" disabled>Select an available driver...</option>
+                        {availableDrivers.map(d => (
+                          <option key={d.id} value={d.id}>{d.first_name} {d.last_name}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="rounded-2xl border border-brand-border/40 p-4 flex flex-col gap-3">
@@ -581,19 +865,54 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {selectedTrip.vehicle && (
-                <div className="rounded-2xl border border-brand-border/40 p-4">
-                  <p className="text-[10px] font-semibold text-brand-neutral-dark/40 uppercase tracking-wider mb-2">Vehicle</p>
-                  <p className="text-sm font-bold text-brand-primary">{selectedTrip.vehicle.make} {selectedTrip.vehicle.model}</p>
-                  <p className="text-[11px] text-brand-neutral-dark/50 mt-0.5">{selectedTrip.vehicle.registration_number}</p>
-                </div>
-              )}
+              <div className="rounded-2xl border border-brand-border/40 p-4">
+                <p className="text-[10px] font-semibold text-brand-neutral-dark/40 uppercase tracking-wider mb-2">Vehicle</p>
+                {selectedTrip.vehicle ? (
+                  <>
+                    <p className="text-sm font-bold text-brand-primary">{selectedTrip.vehicle.make} {selectedTrip.vehicle.model}</p>
+                    <p className="text-[11px] text-brand-neutral-dark/50 mt-0.5">{selectedTrip.vehicle.registration_number}</p>
+                  </>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm font-semibold text-brand-primary">Unassigned</p>
+                    {(role === 'dispatcher' || role === 'admin') && (
+                      <select 
+                        className="w-full px-3 py-2 bg-brand-surface border border-brand-border/60 rounded-lg focus:outline-none text-xs font-semibold text-brand-primary"
+                        onChange={(e) => handleAssignResource(selectedTrip.id, 'vehicle_id', e.target.value)}
+                        value=""
+                      >
+                        <option value="" disabled>Select an active vehicle...</option>
+                        {availableVehicles.map(v => (
+                          <option key={v.id} value={v.id}>{v.registration_number} ({v.make} {v.model})</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-brand-border/40">
+            <div className="px-6 py-4 border-t border-brand-border/40 flex flex-col gap-3">
+              {(role === 'dispatcher' || role === 'admin') && selectedTrip.status === 'scheduled' && (
+                <button
+                  onClick={() => handleUpdateTripStatus(selectedTrip.id, selectedTrip.status)}
+                  disabled={!selectedTrip.driver_id || !selectedTrip.vehicle_id}
+                  className="w-full py-3 rounded-2xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {!selectedTrip.driver_id || !selectedTrip.vehicle_id ? 'Assign Driver & Vehicle First' : 'Start Trip (Mark In Progress)'}
+                </button>
+              )}
+              {(role === 'admin') && selectedTrip.status === 'in_progress' && (
+                <button
+                  onClick={() => handleUpdateTripStatus(selectedTrip.id, selectedTrip.status)}
+                  className="w-full py-3 rounded-2xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-colors"
+                >
+                  Complete Trip
+                </button>
+              )}
               <button
                 onClick={() => setSelectedTrip(null)}
-                className="w-full py-3 rounded-2xl bg-brand-primary text-white text-sm font-semibold hover:bg-brand-primary/90 transition-colors"
+                className="w-full py-3 rounded-2xl bg-white border border-brand-border/60 text-brand-primary text-sm font-semibold hover:bg-brand-surface transition-colors"
               >
                 Close
               </button>
@@ -601,6 +920,13 @@ export default function Dashboard() {
           </>
         )}
       </div>
+
+      <datalist id="locations">
+        {availableLocations.map((loc) => (
+          <option key={loc} value={loc} />
+        ))}
+      </datalist>
+
     </div>
   );
 }

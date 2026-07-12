@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { authService } from '@/services/authService';
 import type { User } from '@/types/database';
+import { useRole } from '@/contexts/RoleContext';
 
 interface SidebarProps {
   onCloseMobile?: () => void;
@@ -11,6 +12,7 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
   const [profile, setProfile] = useState<User | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
+  const { role } = useRole();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -67,7 +69,9 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
               <span className="text-sm font-bold text-brand-primary leading-tight truncate max-w-[120px]">
                 {profile?.full_name || 'Guest User'}
               </span>
-              <span className="text-[11px] font-semibold text-brand-neutral-dark/40 leading-tight mt-0.5">Admin</span>
+              <span className="text-[11px] font-semibold text-brand-neutral-dark/40 leading-tight mt-0.5">
+                {role.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+              </span>
             </div>
           </div>
           {/* Sign-out icon button — click to toggle */}
