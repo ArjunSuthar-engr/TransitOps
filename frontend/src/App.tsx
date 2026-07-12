@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { RoleProvider } from '@/contexts/RoleContext';
 import { ProtectedRoute } from '@/components/routing/ProtectedRoute';
 import { AppLayout } from '@/layouts/AppLayout';
 import Login from '@/pages/Login';
@@ -16,7 +17,8 @@ import Settings from '@/pages/Settings';
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <RoleProvider>
+        <BrowserRouter>
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
@@ -38,10 +40,10 @@ export default function App() {
             </Route>
           </Route>
 
-          {/* Redirect any other unregistered URL to dashboard */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
-      </BrowserRouter>
+        </BrowserRouter>
+      </RoleProvider>
     </AuthProvider>
   );
 }
