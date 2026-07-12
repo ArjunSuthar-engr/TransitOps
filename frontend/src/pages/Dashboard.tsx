@@ -118,51 +118,6 @@ export default function Dashboard() {
     };
   }, []);
 
-  // ── DYNAMIC DATA SHIFTING (HACKATHON MODE) ── //
-  // Shift all dates forward so the most recent completed/in_progress trip happens today.
-  const dateOffsetMs = useMemo(() => {
-    if (!trips.length && !expenses.length) return 0;
-    
-    const activeTrips = trips.filter(t => t.status === 'completed' || t.status === 'in_progress');
-    const tripPool = activeTrips.length > 0 ? activeTrips : trips;
-    
-    let maxDate = dayjs(0);
-    if (tripPool.length > 0) {
-      maxDate = tripPool.reduce((max, t) => {
-        const d = dayjs(t.start_time || t.created_at);
-        return d.isAfter(max) ? d : max;
-      }, dayjs(0));
-    } else if (expenses.length > 0) {
-      maxDate = expenses.reduce((max, e) => {
-        const d = dayjs(e.expense_date || e.created_at);
-        return d.isAfter(max) ? d : max;
-      }, dayjs(0));
-    }
-    
-    return dayjs().diff(maxDate, 'millisecond');
-  }, [trips, expenses]);
-
-  const liveTrips = useMemo(() => {
-    if (dateOffsetMs === 0) return trips;
-    return trips.map(t => {
-      const shifted = { ...t };
-      if (shifted.start_time) shifted.start_time = dayjs(shifted.start_time).add(dateOffsetMs, 'ms').toISOString();
-      if (shifted.end_time) shifted.end_time = dayjs(shifted.end_time).add(dateOffsetMs, 'ms').toISOString();
-      if (shifted.created_at) shifted.created_at = dayjs(shifted.created_at).add(dateOffsetMs, 'ms').toISOString();
-      return shifted;
-    });
-  }, [trips, dateOffsetMs]);
-
-  const liveExpenses = useMemo(() => {
-    if (dateOffsetMs === 0) return expenses;
-    return expenses.map(e => {
-      const shifted = { ...e };
-      if (shifted.expense_date) shifted.expense_date = dayjs(shifted.expense_date).add(dateOffsetMs, 'ms').toISOString();
-      if (shifted.created_at) shifted.created_at = dayjs(shifted.created_at).add(dateOffsetMs, 'ms').toISOString();
-      return shifted;
-    });
-  }, [expenses, dateOffsetMs]);
-
   // ── DYNAMIC DATA CALCULATIONS ── //
 
   // Fulfillment Performance: completed trips as a share of all trips in the last 17 days.
@@ -195,40 +150,59 @@ export default function Dashboard() {
     });
   }, [trips]);
 
-  // Expenses by Quarter and Category
+  // Expenses by rolling month and category
   const expenseData = useMemo(() => {
+    const monthBuckets = Array.from({ length: 4 }, (_, index) => {
+      const monthDate = dayjs().startOf('month').subtract(3 - index, 'month');
+      return {
+        key: monthDate.format('YYYY-MM'),
+        label: monthDate.format('MMM'),
+        fuel: 0,
+        maintenance: 0,
+        other: 0,
+      };
+    });
+
+    expenses.forEach(e => {
+      if (!e.amount || !e.type) return;
+      const date = dayjs(e.expense_date || e.created_at);
+      const bucket = monthBuckets.find(m => m.key === date.format('YYYY-MM'));
+      if (!bucket) return;
+
+      const amount = Number(e.amount);
+      if (e.type === 'fuel') bucket.fuel += amount;
+      else if (e.type === 'maintenance') bucket.maintenance += amount;
+      else bucket.other += amount;
+    });
+
     const data = {
       fuel: [0, 0, 0, 0],
       maintenance: [0, 0, 0, 0],
       other: [0, 0, 0, 0]
     };
 
-    liveExpenses.forEach(e => {
-      if (!e.amount || !e.type) return;
-      const d = new Date(e.expense_date || e.created_at);
-      const q = Math.floor(d.getMonth() / 3);
-      if (e.type === 'fuel') data.fuel[q] += Number(e.amount);
-      else if (e.type === 'maintenance') data.maintenance[q] += Number(e.amount);
-      else data.other[q] += Number(e.amount);
+    monthBuckets.forEach((bucket, index) => {
+      data.fuel[index] = bucket.fuel;
+      data.maintenance[index] = bucket.maintenance;
+      data.other[index] = bucket.other;
     });
 
-    const fuelTotal = data.fuel.reduce((a, b) => a + b, 0);
-    const maintTotal = data.maintenance.reduce((a, b) => a + b, 0);
-    const otherTotal = data.other.reduce((a, b) => a + b, 0);
-    
-    // Scale heights to maximum column height
-    const maxTotal = Math.max(fuelTotal, maintTotal, otherTotal, 1);
-    const toPct = (val: number) => Math.round((val / maxTotal) * 100);
+    const fuelTotal = Math.max(...data.fuel, 1);
+    const maintTotal = Math.max(...data.maintenance, 1);
+    const otherTotal = Math.max(...data.other, 1);
+
+    const toPct = (val: number, maxTotal: number) => Math.round((val / maxTotal) * 100);
 
     return {
-      fuel: data.fuel.map(toPct),
-      maintenance: data.maintenance.map(toPct),
-      other: data.other.map(toPct)
+      labels: monthBuckets.map(bucket => bucket.label),
+      fuel: data.fuel.map(val => toPct(val, fuelTotal)),
+      maintenance: data.maintenance.map(val => toPct(val, maintTotal)),
+      other: data.other.map(val => toPct(val, otherTotal))
     };
-  }, [liveExpenses]);
+  }, [expenses]);
 
   const filteredTrips = useMemo(() => {
-    let list = liveTrips;
+    let list = trips;
     if (activeFilter !== 'all') {
       list = list.filter(t => t.status === activeFilter);
     }
@@ -242,7 +216,7 @@ export default function Dashboard() {
       );
     }
     return list;
-  }, [liveTrips, activeFilter, searchQuery]);
+  }, [trips, activeFilter, searchQuery]);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
@@ -709,24 +683,36 @@ export default function Dashboard() {
 
           {/* LEFT: Fulfillment Performance */}
           <div className="flex flex-col">
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex justify-between items-center mb-3">
               <h3 className="text-base font-sans font-medium text-brand-primary">Fulfillment Performance</h3>
             </div>
+            <p className="mb-5 text-[11px] font-medium text-brand-neutral-dark/50">
+              Completed trips as a share of total trips for each of the last 17 days.
+            </p>
             <div className="relative h-48 w-full flex items-end justify-between px-2">
               <div className="absolute inset-0 flex flex-col justify-between pointer-events-none z-0">
                 <div className="w-full flex justify-end"><span className="text-[10px] text-brand-neutral-dark/40 font-semibold transform -translate-y-1/2">100%</span></div>
                 <div className="w-full border-t border-brand-border/50 border-dashed flex justify-end"><span className="text-[10px] text-brand-neutral-dark/40 font-semibold transform -translate-y-1/2 bg-[#F1F6F3] pl-2">50%</span></div>
                 <div className="w-full border-t border-brand-border/50 flex justify-end"><span className="text-[10px] text-brand-neutral-dark/40 font-semibold transform -translate-y-1/2 bg-[#F1F6F3] pl-2">0%</span></div>
               </div>
-              {performanceData.map((h, i) => (
+              {performanceData.map((h, i) => {
+                const isToday = i === performanceData.length - 1;
+                const totalTrips = trips.filter(trip => trip.start_time && dayjs(trip.start_time).startOf('day').isSame(dayjs().startOf('day').subtract(16 - i, 'day'), 'day')).length;
+                const completedTrips = trips.filter(trip => trip.start_time && trip.status === 'completed' && dayjs(trip.start_time).startOf('day').isSame(dayjs().startOf('day').subtract(16 - i, 'day'), 'day')).length;
+
+                return (
                 <div key={i} className="relative flex flex-col items-center group w-4 h-full justify-end z-10">
-                  {i === 6 && <span className="absolute -top-7 text-[11px] font-bold text-brand-primary whitespace-nowrap">Today</span>}
-                  <span className={`text-[9px] font-bold mb-1 ${i === 6 ? 'text-brand-primary' : 'text-brand-neutral-dark/40'}`}>{h}</span>
-                  <div className={`w-full rounded-sm transition-all duration-700 ease-out ${i === 6 ? 'bg-brand-primary' : 'bg-gradient-to-t from-brand-border/10 to-brand-border/80'}`} style={{ height: `${h}%` }}>
-                    {i !== 6 && <div className="h-0.5 w-full bg-brand-neutral-dark/60 rounded-t-sm" />}
+                  {isToday && <span className="absolute -top-7 text-[11px] font-bold text-brand-primary whitespace-nowrap">Today</span>}
+                  <span className={`text-[9px] font-bold mb-1 ${isToday ? 'text-brand-primary' : 'text-brand-neutral-dark/40'}`}>{h}%</span>
+                  <span className={`absolute -bottom-5 text-[8px] font-semibold whitespace-nowrap ${isToday ? 'text-brand-primary' : 'text-brand-neutral-dark/30'}`}>
+                    {totalTrips > 0 ? `${completedTrips}/${totalTrips}` : '0'}
+                  </span>
+                  <div className={`w-full rounded-sm transition-all duration-700 ease-out ${isToday ? 'bg-brand-primary' : 'bg-gradient-to-t from-brand-border/10 to-brand-border/80'}`} style={{ height: `${h}%` }}>
+                    {!isToday && <div className="h-0.5 w-full bg-brand-neutral-dark/60 rounded-t-sm" />}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -782,10 +768,12 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex justify-center items-center gap-4 mt-6 text-[10px] font-semibold text-brand-primary">
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-primary" />Q1</div>
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-neutral-dark/70" />Q2</div>
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-neutral-dark/50" />Q3</div>
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-neutral-dark/30" />Q4</div>
+              {expenseData.labels.map((label, index) => (
+                <div key={label} className="flex items-center gap-1.5">
+                  <div className={`w-2 h-2 rounded-sm ${index === 0 ? 'bg-brand-primary' : index === 1 ? 'bg-brand-neutral-dark/70' : index === 2 ? 'bg-brand-neutral-dark/50' : 'bg-brand-neutral-dark/30'}`} />
+                  {label}
+                </div>
+              ))}
             </div>
           </div>
           )}
