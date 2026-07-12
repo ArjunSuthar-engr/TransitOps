@@ -560,7 +560,7 @@ export default function Dashboard() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={handleStickyInteraction}
-            className="w-full pl-9 pr-4 py-1.5 bg-brand-surface border border-brand-border/60 rounded-xl focus:outline-none text-sm placeholder:text-brand-neutral-dark/50 text-brand-primary"
+            className="w-full pl-9 pr-4 py-1.5 bg-brand-surface border border-brand-border/60 rounded-xl focus:outline-none text-sm placeholder:text-brand-neutral-dark/50 text-brand-primary thick-caret"
           />
         </div>
 
@@ -604,7 +604,7 @@ export default function Dashboard() {
               placeholder="Search order..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-7 pr-4 py-1.5 bg-transparent focus:outline-none text-sm font-sans placeholder:text-brand-neutral-dark/50 text-brand-primary"
+              className="w-full pl-7 pr-4 py-1 bg-transparent border-b border-brand-neutral-dark/20 focus:border-brand-primary focus:outline-none text-sm font-sans placeholder:text-brand-neutral-dark/50 text-brand-primary thick-caret"
             />
           </div>
           {/* Sentinel 1: Track when hero search leaves view */}

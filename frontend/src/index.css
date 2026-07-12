@@ -40,3 +40,9 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #D1D5DB;
 }
+
+/* Custom thick blinking caret */
+.thick-caret {
+  caret-shape: block;
+  caret-color: #0C0D0D !important;
+}
