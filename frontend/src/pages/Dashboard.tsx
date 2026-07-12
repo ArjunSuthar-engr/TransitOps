@@ -585,18 +585,6 @@ export default function Dashboard() {
           <div className="flex flex-col">
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-base font-sans font-medium text-brand-primary">Fulfillment Performance</h3>
-              <div className="flex gap-2">
-                <button className="h-9 w-9 flex items-center justify-center rounded-[10px] bg-white border border-brand-border/40 shadow-sm text-brand-primary hover:bg-brand-surface">
-                  <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </button>
-                <button className="h-9 w-9 flex items-center justify-center rounded-[10px] bg-white border border-brand-border/40 shadow-sm text-brand-primary hover:bg-brand-surface">
-                  <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                </button>
-              </div>
             </div>
             <div className="relative h-48 w-full flex items-end justify-between px-2">
               <div className="absolute inset-0 flex flex-col justify-between pointer-events-none z-0">
@@ -607,6 +595,7 @@ export default function Dashboard() {
               {performanceData.map((h, i) => (
                 <div key={i} className="relative flex flex-col items-center group w-4 h-full justify-end z-10">
                   {i === 6 && <span className="absolute -top-7 text-[11px] font-bold text-brand-primary whitespace-nowrap">Today</span>}
+                  <span className={`text-[9px] font-bold mb-1 ${i === 6 ? 'text-brand-primary' : 'text-brand-neutral-dark/40'}`}>{h}</span>
                   <div className={`w-full rounded-sm transition-all duration-700 ease-out ${i === 6 ? 'bg-brand-primary' : 'bg-gradient-to-t from-brand-border/10 to-brand-border/80'}`} style={{ height: `${h}%` }}>
                     {i !== 6 && <div className="h-0.5 w-full bg-brand-neutral-dark/60 rounded-t-sm" />}
                   </div>
@@ -620,19 +609,7 @@ export default function Dashboard() {
             <div className="flex flex-col">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-base font-sans font-medium text-brand-primary">Total Expenses</h3>
-              <div className="flex gap-2">
-                <button className="h-9 w-9 flex items-center justify-center rounded-[10px] bg-white border border-brand-border/40 shadow-sm text-brand-primary hover:bg-brand-surface">
-                  <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                  </svg>
-                </button>
-                <button className="h-9 w-9 flex items-center justify-center rounded-[10px] bg-white border border-brand-border/40 shadow-sm text-brand-primary hover:bg-brand-surface">
-                  <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
-                </button>
               </div>
-            </div>
             <div className="flex items-end gap-3 mb-6">
               <span className="text-[40px] font-sans font-medium text-brand-primary tracking-tight leading-none">
                 {isLoading ? '₹...' : formatCurrency(totalExpenses)}
@@ -648,7 +625,12 @@ export default function Dashboard() {
                 {expenseData.fuel[0] > 0 && <div className="bg-brand-primary rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.fuel[0]}%` }} />}
               </div>
               <div className="absolute left-[25%] w-[12.5%] h-full">
-                <svg className="w-full h-full opacity-10" preserveAspectRatio="none"><polygon points="0,45 100,65 100,110 0,110" fill="currentColor" /></svg>
+                <svg className="w-full h-full opacity-10" preserveAspectRatio="none" viewBox="0 0 100 100">
+                  <polygon 
+                    points={`0,${100 - (expenseData.fuel.reduce((a, b) => a + b, 0) * 0.8)} 100,${100 - (expenseData.maintenance.reduce((a, b) => a + b, 0) * 0.8)} 100,100 0,100`} 
+                    fill="currentColor" 
+                  />
+                </svg>
               </div>
               <div className="flex flex-col gap-1 w-1/4 h-full justify-end relative z-10 text-center">
                 <span className="text-[10px] font-bold text-brand-primary mb-1">Maintenance</span>
@@ -658,7 +640,12 @@ export default function Dashboard() {
                 {expenseData.maintenance[0] > 0 && <div className="bg-brand-primary rounded-md w-full transition-all duration-700" style={{ height: `${expenseData.maintenance[0]}%` }} />}
               </div>
               <div className="absolute left-[62.5%] w-[12.5%] h-full">
-                <svg className="w-full h-full opacity-10" preserveAspectRatio="none"><polygon points="0,65 100,10 100,110 0,110" fill="currentColor" /></svg>
+                <svg className="w-full h-full opacity-10" preserveAspectRatio="none" viewBox="0 0 100 100">
+                  <polygon 
+                    points={`0,${100 - (expenseData.maintenance.reduce((a, b) => a + b, 0) * 0.8)} 100,${100 - (expenseData.other.reduce((a, b) => a + b, 0) * 0.8)} 100,100 0,100`} 
+                    fill="currentColor" 
+                  />
+                </svg>
               </div>
               <div className="flex flex-col gap-1 w-1/4 h-full justify-end relative z-10 text-right">
                 <span className="text-[10px] font-bold text-brand-primary mb-1">Other</span>
