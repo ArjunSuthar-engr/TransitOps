@@ -1,10 +1,27 @@
 import { NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { authService } from '@/services/authService';
+import type { User } from '@/types/database';
 
 interface SidebarProps {
   onCloseMobile?: () => void;
 }
 
 export function Sidebar({ onCloseMobile }: SidebarProps) {
+  const [profile, setProfile] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const userProfile = await authService.getCurrentProfile();
+        setProfile(userProfile);
+      } catch (err) {
+        console.error('Error loading profile in sidebar:', err);
+      }
+    };
+    fetchProfile();
+  }, []);
+
   return (
     <div className="flex h-full w-full flex-col bg-white text-brand-primary pt-8 pb-6 px-5 overflow-hidden border-0">
       
@@ -31,10 +48,12 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
       <div className="flex items-center justify-between mb-8 px-4 py-3 rounded-[16px] border border-brand-border/40 shadow-sm bg-white cursor-pointer hover:bg-brand-surface/50 transition-colors">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-full bg-brand-surface overflow-hidden border border-brand-border/60">
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Ethan&backgroundColor=e2e8f0" alt="Avatar" className="w-full h-full object-cover" />
+            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.full_name || 'Guest'}&backgroundColor=e2e8f0`} alt="Avatar" className="w-full h-full object-cover" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-brand-primary leading-tight">Arjun Suthar</span>
+            <span className="text-sm font-bold text-brand-primary leading-tight truncate max-w-[120px]">
+              {profile?.full_name || 'Guest User'}
+            </span>
             <span className="text-[11px] font-semibold text-brand-neutral-dark/40 leading-tight mt-0.5">Admin</span>
           </div>
         </div>

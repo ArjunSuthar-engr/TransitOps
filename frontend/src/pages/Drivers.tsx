@@ -1,19 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Table, TableHeader, TableBody, TableRow, TableHeaderCell, TableCell } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
+import { driverService } from '@/services/driverService';
+import type { Driver } from '@/types/database';
 
 export default function Drivers() {
   const [isOpen, setIsOpen] = useState(false);
-  const mockDrivers = [
-    { id: '1', name: 'Marcus Vance', phone: '+1 555-0199', license_number: 'DL-98402A', status: 'on_trip' },
-    { id: '2', name: 'Sarah Connor', phone: '+1 555-0122', license_number: 'DL-44812B', status: 'available' },
-    { id: '3', name: 'Elena Rostova', phone: '+1 555-0188', license_number: 'DL-11802C', status: 'available' },
-    { id: '4', name: 'James Carter', phone: '+1 555-0155', license_number: 'DL-55204D', status: 'off_duty' }
-  ];
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDrivers = async () => {
+      try {
+        const data = await driverService.getAll();
+        setDrivers(data || []);
+      } catch (error) {
+        console.error('Failed to fetch drivers:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDrivers();
+  }, []);
 
   return (
     <div className="flex flex-col gap-6">
@@ -59,21 +71,31 @@ export default function Drivers() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {mockDrivers.map((driver) => (
-            <TableRow key={driver.id}>
-              <TableCell className="font-semibold text-brand-primary dark:text-white">{driver.name}</TableCell>
-              <TableCell>{driver.phone}</TableCell>
-              <TableCell>{driver.license_number}</TableCell>
-              <TableCell>
-                <Badge variant={driver.status === 'available' ? 'success' : driver.status === 'on_trip' ? 'info' : 'neutral'}>
-                  {driver.status.replace('_', ' ')}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <Button variant="outline" size="sm">Edit</Button>
-              </TableCell>
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">Loading drivers...</TableCell>
             </TableRow>
-          ))}
+          ) : drivers.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">No drivers found.</TableCell>
+            </TableRow>
+          ) : (
+            drivers.map((driver) => (
+              <TableRow key={driver.id}>
+                <TableCell className="font-semibold text-brand-primary dark:text-white">{driver.first_name} {driver.last_name}</TableCell>
+                <TableCell>{driver.phone || 'N/A'}</TableCell>
+                <TableCell>{driver.license_number}</TableCell>
+                <TableCell>
+                  <Badge variant={driver.status === 'available' ? 'success' : driver.status === 'on_trip' ? 'info' : 'neutral'}>
+                    {driver.status ? driver.status.replace('_', ' ') : 'Unknown'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button variant="outline" size="sm">Edit</Button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
 

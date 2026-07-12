@@ -1,18 +1,44 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Table, TableHeader, TableBody, TableRow, TableHeaderCell, TableCell } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
+import { fuelService } from '@/services/fuelService';
 
 export default function Fuel() {
   const [isOpen, setIsOpen] = useState(false);
-  const mockFuelLogs = [
-    { id: '1', vehicle: 'Ford Transit (TX-402-A)', quantity: 45, cost: '$67.50', date: '2026-07-11' },
-    { id: '2', vehicle: 'Volvo Coach (TX-901-B)', quantity: 180, cost: '$270.00', date: '2026-07-10' },
-    { id: '3', vehicle: 'Mercedes Benz (TX-112-C)', quantity: 50, cost: '$75.00', date: '2026-07-09' }
-  ];
+  const [fuelLogs, setFuelLogs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFuelLogs = async () => {
+      try {
+        const data = await fuelService.getAll();
+        setFuelLogs(data || []);
+      } catch (error) {
+        console.error('Failed to fetch fuel logs:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchFuelLogs();
+  }, []);
+
+  const totalFuelFilled = useMemo(() => fuelLogs.reduce((acc, log) => acc + (Number(log.quantity) || 0), 0), [fuelLogs]);
+  const combinedSpend = useMemo(() => fuelLogs.reduce((acc, log) => acc + (Number(log.cost) || 0), 0), [fuelLogs]);
+  const avgPrice = totalFuelFilled > 0 ? (combinedSpend / totalFuelFilled).toFixed(2) : '0.00';
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -27,21 +53,21 @@ export default function Fuel() {
         <Card>
           <CardContent className="p-5 flex flex-col gap-1 font-sans">
             <span className="text-[10px] font-semibold text-brand-neutral-dark/50 uppercase tracking-wider">Total Fuel Filled</span>
-            <span className="text-xl font-display font-bold text-brand-primary">275 Liters</span>
+            <span className="text-xl font-display font-bold text-brand-primary">{totalFuelFilled} Liters</span>
             <span className="text-[10px] text-brand-neutral-dark/40 mt-1">Sum of active refueling logs</span>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-5 flex flex-col gap-1 font-sans">
             <span className="text-[10px] font-semibold text-brand-neutral-dark/50 uppercase tracking-wider">Average Price/L</span>
-            <span className="text-xl font-display font-bold text-brand-primary">$1.50</span>
-            <span className="text-[10px] text-[#A5D48C] font-semibold mt-1">Stable market index rate</span>
+            <span className="text-xl font-display font-bold text-brand-primary">₹{avgPrice}</span>
+            <span className="text-[10px] text-[#A5D48C] font-semibold mt-1">Calculated from logs</span>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-5 flex flex-col gap-1 font-sans">
             <span className="text-[10px] font-semibold text-brand-neutral-dark/50 uppercase tracking-wider">Combined Spend</span>
-            <span className="text-xl font-display font-bold text-brand-primary">$412.50</span>
+            <span className="text-xl font-display font-bold text-brand-primary">₹{combinedSpend.toLocaleString('en-IN')}</span>
             <span className="text-[10px] text-brand-neutral-dark/40 mt-1">Direct fuel expenditures</span>
           </CardContent>
         </Card>
@@ -75,17 +101,29 @@ export default function Fuel() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {mockFuelLogs.map((log) => (
-            <TableRow key={log.id}>
-              <TableCell className="font-semibold text-brand-primary dark:text-white">{log.vehicle}</TableCell>
-              <TableCell>{log.quantity} L</TableCell>
-              <TableCell className="font-semibold text-brand-primary dark:text-white">{log.cost}</TableCell>
-              <TableCell>{log.date}</TableCell>
-              <TableCell className="text-right">
-                <Button variant="outline" size="sm">Edit</Button>
-              </TableCell>
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">Loading fuel logs...</TableCell>
             </TableRow>
-          ))}
+          ) : fuelLogs.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">No fuel logs found.</TableCell>
+            </TableRow>
+          ) : (
+            fuelLogs.map((log) => (
+              <TableRow key={log.id}>
+                <TableCell className="font-semibold text-brand-primary dark:text-white">
+                  {log.vehicle ? `${log.vehicle.make} ${log.vehicle.model} (${log.vehicle.registration_number})` : 'N/A'}
+                </TableCell>
+                <TableCell>{log.quantity} L</TableCell>
+                <TableCell className="font-semibold text-brand-primary dark:text-white">₹{Number(log.cost).toLocaleString('en-IN')}</TableCell>
+                <TableCell>{formatDate(log.date)}</TableCell>
+                <TableCell className="text-right">
+                  <Button variant="outline" size="sm">Edit</Button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
 
