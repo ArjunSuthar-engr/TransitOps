@@ -22,27 +22,27 @@ export function StatCard({
 }: StatCardProps) {
   return (
     <Card className={className}>
-      <CardContent className="p-5 flex flex-col gap-1">
+      <CardContent className="p-5.5 flex flex-col gap-1">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-slate-450 dark:text-slate-400 tracking-wide uppercase">
+          <p className="text-[10px] font-semibold text-brand-neutral-dark/60 dark:text-slate-400 tracking-wider uppercase">
             {title}
           </p>
           {icon && (
-            <div className="p-2 bg-slate-50/70 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-350 rounded-lg shadow-xxs">
+            <div className="p-1.75 bg-brand-surface dark:bg-slate-900 border border-brand-border/60 dark:border-slate-800 text-brand-neutral-dark dark:text-slate-350 rounded-lg">
               {icon}
             </div>
           )}
         </div>
-        <div className="flex items-baseline gap-2 mt-1">
-          <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+        <div className="flex items-baseline gap-2 mt-1.5">
+          <span className="text-2xl font-display font-bold tracking-tight text-brand-primary dark:text-white">
             {value}
           </span>
           {trend && (
             <span
-              className={`inline-flex items-center text-xs font-medium px-1.5 py-0.5 rounded-md ${
+              className={`inline-flex items-center text-[10px] font-sans font-medium px-2 py-0.5 rounded-full border ${
                 trend.isPositive
-                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400'
-                  : 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400'
+                  ? 'bg-[#A5D48C]/15 text-slate-800 border-[#A5D48C]/35 dark:bg-[#A5D48C]/10 dark:text-[#A5D48C]'
+                  : 'bg-red-500/10 text-red-750 border-red-500/20 dark:bg-red-950/20 dark:text-red-400'
               }`}
             >
               {trend.isPositive ? '↑' : '↓'} {trend.value}
@@ -50,7 +50,7 @@ export function StatCard({
           )}
         </div>
         {description && (
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+          <p className="text-[10px] font-sans text-brand-neutral-dark/50 dark:text-slate-500 mt-1">
             {description}
           </p>
         )}
