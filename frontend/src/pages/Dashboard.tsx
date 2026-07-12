@@ -214,6 +214,15 @@ export default function Dashboard() {
     return new Date(dateString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
+  const availableLocations = useMemo(() => {
+    const locs = new Set<string>();
+    trips.forEach(t => {
+      if (t.start_location) locs.add(t.start_location);
+      if (t.end_location) locs.add(t.end_location);
+    });
+    return Array.from(locs).sort();
+  }, [trips]);
+
   const formatDateTime = (dateString: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -386,15 +395,68 @@ export default function Dashboard() {
               </svg>
               Export
             </button>
-            <button 
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-white text-[13px] font-semibold rounded-[14px] hover:bg-brand-primary/90 transition-colors shadow-sm"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-              </svg>
-              Add new shipment
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setShowCreateModal(!showCreateModal)}
+                className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-white text-[13px] font-semibold rounded-[14px] hover:bg-brand-primary/90 transition-colors shadow-sm"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                </svg>
+                Add new shipment
+              </button>
+
+              {showCreateModal && (
+                <>
+                  {/* Invisible backdrop to dismiss popup when clicking outside */}
+                  <div className="fixed inset-0 z-40" onClick={() => setShowCreateModal(false)} />
+                  
+                  {/* Inline absolute popup */}
+                  <div className="absolute right-0 top-full mt-2 w-[320px] bg-[#0C0D0D] rounded-2xl shadow-2xl border border-white/10 overflow-hidden z-50 text-white animate-in fade-in zoom-in-95 origin-top-right duration-200">
+                    <div className="px-5 py-5 flex flex-col gap-4">
+                      <div>
+                        <h4 className="text-[14px] font-bold text-white mb-1">Create Shipment</h4>
+                        <p className="text-[11px] text-white/50 font-medium leading-tight">
+                          The order will be scheduled instantly. Resources can be assigned later.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] font-bold text-white/70">Pickup Location</label>
+                        <input 
+                          type="text" 
+                          list="locations"
+                          placeholder="e.g. Warehouse A"
+                          value={newPickup}
+                          onChange={e => setNewPickup(e.target.value)}
+                          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:border-white/40 text-xs font-semibold text-white placeholder:text-white/30"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] font-bold text-white/70">Delivery Location</label>
+                        <input 
+                          type="text" 
+                          list="locations"
+                          placeholder="e.g. Pune Hub"
+                          value={newDelivery}
+                          onChange={e => setNewDelivery(e.target.value)}
+                          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:border-white/40 text-xs font-semibold text-white placeholder:text-white/30"
+                        />
+                      </div>
+
+                      <button
+                        onClick={handleCreateTrip}
+                        disabled={isSubmitting || !newPickup || !newDelivery}
+                        className="mt-2 w-full py-2.5 rounded-xl bg-white text-brand-primary text-[13px] font-bold hover:bg-gray-100 transition-colors disabled:opacity-50"
+                      >
+                        {isSubmitting ? 'Creating...' : 'Create Order'}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -739,81 +801,12 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* ── CREATE SHIPMENT MODAL (SLIDE-IN) ── */}
-      {showCreateModal && (
-        <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-40"
-          onClick={() => !isSubmitting && setShowCreateModal(false)}
-        />
-      )}
-      <div
-        className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out ${
-          showCreateModal ? 'translate-x-0' : 'translate-x-full'
-        }`}
-      >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-brand-border/40">
-          <div>
-            <p className="text-[11px] font-semibold text-brand-neutral-dark/40 uppercase tracking-wider mb-0.5">New Order</p>
-            <h3 className="text-lg font-display font-bold text-brand-primary">Create Shipment</h3>
-          </div>
-          <button
-            onClick={() => !isSubmitting && setShowCreateModal(false)}
-            className="h-9 w-9 flex items-center justify-center rounded-xl border border-brand-border/60 text-brand-neutral-dark/60 hover:bg-brand-surface transition-colors"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+      <datalist id="locations">
+        {availableLocations.map((loc) => (
+          <option key={loc} value={loc} />
+        ))}
+      </datalist>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-bold text-brand-primary">Pickup Location</label>
-            <input 
-              type="text" 
-              placeholder="e.g. Warehouse A, Mumbai"
-              value={newPickup}
-              onChange={e => setNewPickup(e.target.value)}
-              className="w-full px-4 py-3 bg-brand-surface border border-brand-border/60 rounded-xl focus:outline-none text-sm font-semibold text-brand-primary placeholder:text-brand-neutral-dark/40 placeholder:font-normal"
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-bold text-brand-primary">Delivery Location</label>
-            <input 
-              type="text" 
-              placeholder="e.g. Distribution Center, Pune"
-              value={newDelivery}
-              onChange={e => setNewDelivery(e.target.value)}
-              className="w-full px-4 py-3 bg-brand-surface border border-brand-border/60 rounded-xl focus:outline-none text-sm font-semibold text-brand-primary placeholder:text-brand-neutral-dark/40 placeholder:font-normal"
-            />
-          </div>
-          <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 flex gap-3 mt-2">
-            <svg className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-xs font-medium text-blue-800 leading-relaxed">
-              This shipment will be created as "Scheduled" without an assigned driver or vehicle. You can assign resources from the trip details panel later.
-            </p>
-          </div>
-        </div>
-
-        <div className="px-6 py-4 border-t border-brand-border/40 flex gap-3">
-          <button
-            onClick={() => setShowCreateModal(false)}
-            disabled={isSubmitting}
-            className="flex-1 py-3 rounded-2xl bg-white border border-brand-border/60 text-brand-primary text-sm font-semibold hover:bg-brand-surface transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleCreateTrip}
-            disabled={isSubmitting || !newPickup || !newDelivery}
-            className="flex-1 py-3 rounded-2xl bg-brand-primary text-white text-sm font-semibold hover:bg-brand-primary/90 transition-colors disabled:opacity-50"
-          >
-            {isSubmitting ? 'Creating...' : 'Create Order'}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
