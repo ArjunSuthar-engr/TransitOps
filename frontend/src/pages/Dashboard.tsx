@@ -57,7 +57,7 @@ export default function Dashboard() {
         setTotalExpenses(total);
 
         const dData = await driverService.getAll();
-        const available = dData.filter(d => d.status === 'available') || [];
+        const available = dData.filter(d => d.status === 'available' || d.status === 'on_trip') || [];
         setAvailableDrivers(available);
 
         if (role === 'driver' && userDriverNum) {
@@ -936,7 +936,9 @@ export default function Dashboard() {
                       >
                         <option value="" disabled>Select an available driver...</option>
                         {availableDrivers.map(d => (
-                          <option key={d.id} value={d.id}>{d.first_name} {d.last_name}</option>
+                          <option key={d.id} value={d.id}>
+                            {d.first_name} {d.last_name} {d.status === 'on_trip' ? '(Occupied - assign after current trip)' : ''}
+                          </option>
                         ))}
                       </select>
                     )}
