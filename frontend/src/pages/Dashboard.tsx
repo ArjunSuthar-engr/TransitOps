@@ -902,7 +902,7 @@ export default function Dashboard() {
                   {!selectedTrip.driver_id || !selectedTrip.vehicle_id ? 'Assign Driver & Vehicle First' : 'Start Trip (Mark In Progress)'}
                 </button>
               )}
-              {(role === 'driver' || role === 'admin') && selectedTrip.status === 'in_progress' && (
+              {(role === 'admin') && selectedTrip.status === 'in_progress' && (
                 <button
                   onClick={() => handleUpdateTripStatus(selectedTrip.id, selectedTrip.status)}
                   className="w-full py-3 rounded-2xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-colors"
