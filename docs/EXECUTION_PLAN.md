@@ -14,7 +14,7 @@ This is the hour-by-hour roadmap for our 8-hour hackathon. The timeline is divid
 | **Phase 3** | 3:30 - 5:00 (1h 30m) | Business Validation & Dispatcher | Trip dispatch service methods, validation logic, conflict checks, Dispatcher panel UI |
 | **Phase 4** | 5:00 - 6:00 (1h 00m) | Expense Services & Charts | Fuel tracking & expense services, charts & cost breakdown UI |
 | **Phase 5** | 6:00 - 7:00 (1h 00m) | Integration Testing & Polish | Functional QA, Responsive UI verification, Theme toggle, Edge-case handling |
-| **Phase 6** | 7:00 - 8:00 (1h 00m) | Cloud Deployment & Demo Prep | Frontend cloud hosting (Vercel/Netlify), Live Supabase DB check, Pitch runs |
+| **Phase 6** | 7:00 - 8:00 (1h 00m) | Cloud Deployment & Demo Prep | Vercel auto-deployment, Live Supabase DB check, Pitch runs |
 
 ---
 
@@ -105,7 +105,7 @@ This is the hour-by-hour roadmap for our 8-hour hackathon. The timeline is divid
   - [ ] **Dark Mode Styling**: Implement a fast theme-toggle system.
   - [ ] **Bug Hunting**: Ensure edge cases (like empty lists or null values) fail gracefully.
 * **Deliverables**:
-  * Bug-free builds on the `develop` integration branch.
+  * Bug-free builds on the `main` branch.
   * Polished, responsive UI with functioning Dark Mode toggle.
 
 ---
@@ -113,7 +113,7 @@ This is the hour-by-hour roadmap for our 8-hour hackathon. The timeline is divid
 ### 🚀 Phase 6: Cloud Deployment & Demo Preparation (Time: 7:00 - 8:00)
 * **Goal**: Deploy the web application and rehearse the pitch.
 * **Tasks**:
-  - [ ] **Staging Deploy**: Deploy frontend to Vercel/Netlify.
+  - [ ] **Staging Deploy**: Merge changes into `main` to trigger automatic Vercel deployment.
   - [ ] **Final QA**: Validate database integrations on production URLs.
   - [ ] **Demo Strategy**: Assign roles (e.g., Speaker, Live Driver, Slide Operator).
   - [ ] **Practice Runs**: Complete 2-3 run-throughs of the demo to nail timing.

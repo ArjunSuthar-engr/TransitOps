@@ -46,7 +46,7 @@ This document is the **single source of truth** for every developer and AI codin
 ---
 
 ### 💾 Developer 3: Rajkumar
-* **Role**: Database Administrator
+* **Role**: Database & Infrastructure Engineer
 * **Primary Responsibilities**:
   * Designing tables, relationships, and index optimizations.
   * Configuring Supabase schema and Row Level Security (RLS) policies.
@@ -79,19 +79,19 @@ The following matrix defines editing permissions across the repository:
 
 ## 🌿 Branch Strategy
 
-We follow a structured branch isolation model. Direct commits to `main` are strictly prohibited.
+We follow a simplified branch strategy tailored for a fast-paced 8-hour hackathon. Direct commits to `main` are prohibited.
 
 ```text
-main (Production Release)
-└── develop (Integration & QA)
-     ├── feature/frontend-arjun (Arjun's workspace)
-     ├── feature/backend-janak (Janak's workspace)
-     └── feature/database-rajkumar (Rajkumar's workspace)
+main (Production & Auto-Deploy)
+├── feature/frontend (Arjun's workspace)
+├── feature/app-logic (Janak's workspace)
+└── feature/database (Rajkumar's workspace)
 ```
 
-* **`main`**: Production branch. Only updated via pull requests from `develop` once the build is stable.
-* **`develop`**: The integration branch. Teammates submit PRs to this branch.
-* **`feature/*`**: Dedicated personal work branches matching ownership areas.
+* **`main`**: The primary branch. Any changes merged here trigger an automatic deployment to Vercel. Pull from `main` before starting any task.
+* **`feature/frontend`**: Arjun's workspace for React page views, components, layouts, and Tailwind styling.
+* **`feature/app-logic`**: Janak's workspace for services, custom hooks, utilities, and Supabase integration.
+* **`feature/database`**: Rajkumar's workspace for database schemas, seeds, RLS policies, and configurations.
 
 ---
 
@@ -99,9 +99,9 @@ main (Production Release)
 
 ### 📥 1. Before Starting Work
 Before writing any code, execute these steps in order:
-1. `git checkout develop`
+1. `git checkout main`
 2. `git pull`
-3. `git checkout <your-feature-branch>` (or create it if starting a new task)
+3. `git checkout <your-feature-branch>` (or create it if starting a new task, e.g. `feature/frontend`)
 4. `npm install` (only if new dependencies were pulled in)
 5. `npm run dev` (run the local server)
 6. Ensure the project builds and runs cleanly.
@@ -111,23 +111,28 @@ The process to integrate feature changes safely:
 
 ```mermaid
 graph TD
-    A[Feature Branch] -->|1. Commit & Verify| B(Local Commit)
-    B -->|2. Push to Remote| C(Remote Feature Branch)
-    C -->|3. Open Pull Request| D(develop Branch)
-    D -->|4. Code Review & QA| E(Merged into develop)
-    E -->|5. Production Release| F(main Branch)
+    A[Feature Branch] -->|1. Commit & Push| B(Remote Feature Branch)
+    B -->|2. Quick Teammate Review| C(30-60s Verification)
+    C -->|3. Merge| D(main Branch)
+    D -->|4. Auto-Deployment| E(Vercel Production)
 ```
 ----
 
 ## 💬 Commit Message Convention
 
-We enforce the Conventional Commits style to preserve readable commit histories:
+We enforce the Conventional Commits style and encourage small, frequent commits:
 
-* `feat(ui): create dashboard`
-* `feat(trips): add trip creation`
-* `fix(auth): login redirect`
-* `refactor(db): optimize schema`
-* `docs: update workflow`
+* `feat(vehicles): build fleet table`
+* `feat(drivers): add registry page`
+* `feat(auth): integrate Supabase login`
+* `fix(trips): correct dispatch validation`
+* `docs(database): update schema`
+
+### 💻 Laptop Sharing Guidelines
+Since Arjun and Janak may share a single development laptop:
+- It is fully acceptable to switch branches locally.
+- Make commits individually using your respective author metadata.
+- When both developers actively collaborate on a set of changes, use Git's `Co-authored-by: Name <email>` trailers at the bottom of the commit message description.
 
 ---
 
@@ -203,4 +208,4 @@ Run through this checklist before staging and committing files:
 - [ ] **No Unused Imports**: Remove dead code, unused imports, or variables.
 - [ ] **Clean Logs**: Remove debugging `console.log` statements unless they are intentional.
 - [ ] **No Credentials**: Double check that API keys, passwords, or secrets are not committed.
-- [ ] **Pull Target Branch**: Run `git pull origin develop` to resolve merge conflicts locally.
+- [ ] **Pull Target Branch**: Run `git pull origin main` to resolve merge conflicts locally.
