@@ -74,7 +74,7 @@ export default function Reports() {
   // 5. Line Chart Data (Last 6 Months)
   const monthlyData = useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const last6 = [];
+    const last6: { monthIndex: number, name: string, year: number, total: number }[] = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date();
       d.setMonth(d.getMonth() - i);
