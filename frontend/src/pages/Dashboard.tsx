@@ -120,46 +120,22 @@ export default function Dashboard() {
 
   // ── DYNAMIC DATA CALCULATIONS ── //
 
-  // Fulfillment Performance: completed trips and total trips in the last 17 days.
-  const performanceData = useMemo(() => {
-    const days = Array.from({ length: 17 }, (_, index) => {
-      const date = dayjs().startOf('day').subtract(16 - index, 'day');
-      return {
-        date,
-        label: date.format('D'),
-        total: 0,
-        completed: 0,
-      };
-    });
-
-    trips.forEach(trip => {
-      if (!trip.start_time) return;
-
-      const tripDate = dayjs(trip.start_time).startOf('day');
-      const dayIndex = days.findIndex(day => day.date.isSame(tripDate, 'day'));
-      if (dayIndex === -1) return;
-
-      days[dayIndex].total += 1;
-      if (trip.status === 'completed') {
-        days[dayIndex].completed += 1;
-      }
-    });
-
-    return days.map(day => ({
-      ...day,
-      rate: day.total > 0 ? Math.round((day.completed / day.total) * 100) : 0,
-    }));
-  }, [trips]);
-
   const fulfillmentSummary = useMemo(() => {
-    const completed = performanceData.reduce((sum, day) => sum + day.completed, 0);
-    const total = performanceData.reduce((sum, day) => sum + day.total, 0);
+    const todayStart = dayjs().startOf('day');
+    const createdTodayTrips = trips.filter(trip => {
+      if (!trip.created_at) return false;
+      return dayjs(trip.created_at).isSame(todayStart, 'day');
+    });
+
+    const completedTodayTrips = createdTodayTrips.filter(trip => trip.status === 'completed');
+    const created = createdTodayTrips.length;
+    const completed = completedTodayTrips.length;
     return {
       completed,
-      total,
-      rate: total > 0 ? Math.round((completed / total) * 100) : 0,
+      created,
+      rate: created > 0 ? Math.round((completed / created) * 100) : 0,
     };
-  }, [performanceData]);
+  }, [trips]);
 
   // Expenses by rolling month and category
   const expenseData = useMemo(() => {
@@ -683,44 +659,36 @@ export default function Dashboard() {
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-base font-sans font-medium text-brand-primary">Fulfillment Performance</h3>
               <span className="inline-flex items-center gap-1.5 rounded-md border border-brand-border/60 bg-white px-2 py-1 text-[10px] font-bold text-brand-neutral-dark/60 shadow-sm">
-                {fulfillmentSummary.rate}% fulfilled · {fulfillmentSummary.completed}/{fulfillmentSummary.total || 0}
+                {fulfillmentSummary.rate}% fulfilled · {fulfillmentSummary.completed}/{fulfillmentSummary.created || 0}
               </span>
             </div>
             <p className="mb-5 text-[11px] font-medium text-brand-neutral-dark/50">
-              Trip completion and load volume for each of the last 17 days.
+              Trips created today and how many of those are already completed.
             </p>
-            <div className="relative h-48 w-full flex items-end justify-between px-2">
-              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none z-0">
-                <div className="w-full flex justify-end"><span className="text-[10px] text-brand-neutral-dark/40 font-semibold transform -translate-y-1/2">100%</span></div>
-                <div className="w-full border-t border-brand-border/50 border-dashed flex justify-end"><span className="text-[10px] text-brand-neutral-dark/40 font-semibold transform -translate-y-1/2 bg-[#F1F6F3] pl-2">50%</span></div>
-                <div className="w-full border-t border-brand-border/50 flex justify-end"><span className="text-[10px] text-brand-neutral-dark/40 font-semibold transform -translate-y-1/2 bg-[#F1F6F3] pl-2">0%</span></div>
+            <div className="rounded-2xl border border-brand-border/40 bg-white/70 p-5 shadow-sm">
+              <div className="flex items-end justify-between gap-4 mb-4">
+                <div>
+                  <div className="text-[11px] font-semibold text-brand-neutral-dark/45 uppercase tracking-wider">Created Today</div>
+                  <div className="text-3xl font-display font-bold text-brand-primary">{fulfillmentSummary.created}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[11px] font-semibold text-brand-neutral-dark/45 uppercase tracking-wider">Completed Today</div>
+                  <div className="text-3xl font-display font-bold text-brand-primary">{fulfillmentSummary.completed}</div>
+                </div>
               </div>
-              {(() => {
-                const maxTotal = Math.max(...performanceData.map(day => day.total), 1);
 
-                return performanceData.map((day, i) => {
-                  const isToday = i === performanceData.length - 1;
-                  const totalHeight = day.total > 0 ? Math.max(8, Math.round((day.total / maxTotal) * 100)) : 0;
-                  const completedHeight = day.total > 0 ? Math.max(4, Math.round((day.completed / day.total) * totalHeight)) : 0;
-                  const pendingHeight = Math.max(totalHeight - completedHeight, 0);
+              <div className="h-3 w-full overflow-hidden rounded-full bg-brand-border/30">
+                <div
+                  className="h-full rounded-full bg-brand-primary transition-all duration-500"
+                  style={{ width: `${fulfillmentSummary.created > 0 ? (fulfillmentSummary.completed / fulfillmentSummary.created) * 100 : 0}%` }}
+                />
+              </div>
 
-                  return (
-                    <div key={day.date.format('YYYY-MM-DD')} className="relative flex flex-col items-center group w-4 h-full justify-end z-10">
-                      {isToday && <span className="absolute -top-7 text-[11px] font-bold text-brand-primary whitespace-nowrap">Today</span>}
-                      <span className={`text-[9px] font-bold mb-1 ${isToday ? 'text-brand-primary' : 'text-brand-neutral-dark/40'}`}>
-                        {day.total > 0 ? `${day.completed}/${day.total}` : '0'}
-                      </span>
-                      <div className="w-full flex flex-col justify-end rounded-sm overflow-hidden transition-all duration-700 ease-out bg-brand-border/20" style={{ height: `${totalHeight}%` }}>
-                        {pendingHeight > 0 && <div className="w-full bg-brand-border/30" style={{ height: `${pendingHeight}%` }} />}
-                        {completedHeight > 0 && <div className="w-full bg-brand-primary" style={{ height: `${completedHeight}%` }} />}
-                      </div>
-                      <span className={`absolute -bottom-5 text-[8px] font-semibold whitespace-nowrap ${isToday ? 'text-brand-primary' : 'text-brand-neutral-dark/30'}`}>
-                        {day.label}
-                      </span>
-                    </div>
-                  );
-                });
-              })()}
+              <div className="mt-3 flex items-center justify-between text-[11px] font-semibold text-brand-neutral-dark/45">
+                <span>{fulfillmentSummary.completed} completed</span>
+                <span>{fulfillmentSummary.created ? `${fulfillmentSummary.rate}% of created today` : 'No trips created today'}</span>
+              </div>
+            </div>
             </div>
           </div>
 
