@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 
-export type Role = 'admin' | 'fleet_manager' | 'dispatcher';
+export type Role = 'admin' | 'fleet_manager' | 'dispatcher' | 'driver';
 
 interface RoleContextType {
   role: Role;

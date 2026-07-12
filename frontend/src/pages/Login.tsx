@@ -28,6 +28,20 @@ const DEMO_ACCOUNTS = [
     email: 'dispatch@transitops.com',
     password: 'Transit@Disp1',
   },
+  {
+    label: 'Driver 1',
+    roleType: 'driver' as Role,
+    icon: '🚚',
+    email: 'driver1@transitops.com',
+    password: 'Transit@Driver1',
+  },
+  {
+    label: 'Driver 2',
+    roleType: 'driver' as Role,
+    icon: '🚚',
+    email: 'driver2@transitops.com',
+    password: 'Transit@Driver2',
+  },
 ];
 
 export default function Login() {
@@ -49,6 +63,7 @@ export default function Login() {
       if (email.includes('admin')) setRole('admin');
       else if (email.includes('manager')) setRole('fleet_manager');
       else if (email.includes('dispatch')) setRole('dispatcher');
+      else if (email.includes('driver')) setRole('driver');
       else setRole('admin');
       
       await authService.login(email, password);
