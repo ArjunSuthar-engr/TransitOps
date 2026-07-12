@@ -7,7 +7,10 @@ INSERT INTO auth.users (id, instance_id, email, encrypted_password, email_confir
 ('6ef59264-8ffd-4182-8413-354248b59075', '00000000-0000-0000-0000-000000000000', 'dispatch@transitops.com', crypt('Transit@Disp1', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', 'authenticated', '', '', '', ''),
 ('e45e23bf-6ffe-4b14-998e-ac8e2b1e91af', '00000000-0000-0000-0000-000000000000', 'janak@transitops.com', crypt('Janak@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', 'authenticated', '', '', '', ''),
 ('47ec9755-a2bc-455f-a3bf-f3ebea542a4c', '00000000-0000-0000-0000-000000000000', 'manager@transitops.com', crypt('Transit@Fleet1', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', 'authenticated', '', '', '', ''),
-('726356d8-ca5b-4e93-a82a-95b958370f72', '00000000-0000-0000-0000-000000000000', 'raj@transitops.com', crypt('Raj@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', 'authenticated', '', '', '', '')
+('726356d8-ca5b-4e93-a82a-95b958370f72', '00000000-0000-0000-0000-000000000000', 'raj@transitops.com', crypt('Raj@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', 'authenticated', '', '', '', '),
+('d1111111-1111-4111-a111-111111111111', '00000000-0000-0000-0000-000000000000', 'driver1@transitops.com', crypt('Transit@Driver1', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', 'authenticated', '', '', '', ''),
+('d2222222-2222-4222-a222-222222222222', '00000000-0000-0000-0000-000000000000', 'driver2@transitops.com', crypt('Transit@Driver2', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', 'authenticated', '', '', '', ''),
+('d3333333-3333-4333-a333-333333333333', '00000000-0000-0000-0000-000000000000', 'driver3@transitops.com', crypt('Transit@Driver3', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), 'authenticated', 'authenticated', '', '', '', '')
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Roles
@@ -24,7 +27,10 @@ INSERT INTO public.users (id, role_id, full_name, email) VALUES
 ('6ef59264-8ffd-4182-8413-354248b59075', 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'Demo Dispatcher', 'dispatch@transitops.com'),
 ('e45e23bf-6ffe-4b14-998e-ac8e2b1e91af', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Janak Suthar', 'janak@transitops.com'),
 ('47ec9755-a2bc-455f-a3bf-f3ebea542a4c', 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33', 'Demo Fleet Manager', 'manager@transitops.com'),
-('726356d8-ca5b-4e93-a82a-95b958370f72', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Rajkumar', 'raj@transitops.com')
+('726356d8-ca5b-4e93-a82a-95b958370f72', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Rajkumar', 'raj@transitops.com'),
+('d1111111-1111-4111-a111-111111111111', 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44', 'Driver 1', 'driver1@transitops.com'),
+('d2222222-2222-4222-a222-222222222222', 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44', 'Driver 2', 'driver2@transitops.com'),
+('d3333333-3333-4333-a333-333333333333', 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44', 'Driver 3', 'driver3@transitops.com')
 ON CONFLICT (email) DO NOTHING;
 
 -- 4. Vehicles
@@ -92,7 +98,10 @@ INSERT INTO public.drivers (id, license_number, first_name, last_name, phone, st
 ('e8e5e1ee-f119-4002-80be-3b46b156788d', 'DL-965022909', 'Anil', 'Sharma', '+919745632679', 'available'),
 ('50a2068e-7be8-4916-ab08-7fdfdc1e6602', 'DL-212159173', 'Pawan', 'Sharma', '+919342335510', 'available'),
 ('4d1811be-72c4-47c9-830e-e7f54430e028', 'DL-488985105', 'Prakash', 'Rao', '+919851635301', 'off_duty'),
-('a81d27af-7a5c-4652-9f5d-7ce7b6ab4ed8', 'DL-498866287', 'Ramesh', 'Singh', '+919996092366', 'available')
+('a81d27af-7a5c-4652-9f5d-7ce7b6ab4ed8', 'DL-498866287', 'Ramesh', 'Singh', '+919996092366', 'available'),
+('d1111111-1111-4111-a111-111111111111', 'DL-DRIVER-001', 'Driver', '1', '+919000000001', 'available'),
+('d2222222-2222-4222-a222-222222222222', 'DL-DRIVER-002', 'Driver', '2', '+919000000002', 'available'),
+('d3333333-3333-4333-a333-333333333333', 'DL-DRIVER-003', 'Driver', '3', '+919000000003', 'on_trip')
 ON CONFLICT (license_number) DO NOTHING;
 
 -- 6. Trips
