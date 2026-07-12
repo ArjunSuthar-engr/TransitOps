@@ -10,8 +10,15 @@ interface RoleContextType {
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
-  // Default to admin for now
-  const [role, setRole] = useState<Role>('admin');
+  const [role, setRoleState] = useState<Role>(() => {
+    const saved = localStorage.getItem('app_role');
+    return (saved as Role) || 'admin';
+  });
+
+  const setRole = (newRole: Role) => {
+    localStorage.setItem('app_role', newRole);
+    setRoleState(newRole);
+  };
 
   return (
     <RoleContext.Provider value={{ role, setRole }}>

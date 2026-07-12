@@ -27,6 +27,8 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/open-deliveries" element={<Dashboard />} />
+              <Route path="/trip-history" element={<Dashboard />} />
               <Route path="/vehicles" element={<Vehicles />} />
               <Route path="/drivers" element={<Drivers />} />
               <Route path="/trips" element={<Trips />} />
