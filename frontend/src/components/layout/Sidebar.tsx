@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { authService } from '@/services/authService';
 import type { User } from '@/types/database';
@@ -9,6 +9,8 @@ interface SidebarProps {
 
 export function Sidebar({ onCloseMobile }: SidebarProps) {
   const [profile, setProfile] = useState<User | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -21,6 +23,15 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
     };
     fetchProfile();
   }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await authService.logout();
+      navigate('/login');
+    } catch (err) {
+      console.error('Sign out failed:', err);
+    }
+  };
 
   return (
     <div className="flex h-full w-full flex-col bg-white text-brand-primary pt-8 pb-6 px-5 overflow-hidden border-0">
@@ -45,42 +56,70 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
       </div>
 
       {/* Profile Widget */}
-      <div className="flex items-center justify-between mb-8 px-4 py-3 rounded-[16px] border border-brand-border/40 shadow-sm bg-white cursor-pointer hover:bg-brand-surface/50 transition-colors">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-brand-surface overflow-hidden border border-brand-border/60">
-            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.full_name || 'Guest'}&backgroundColor=e2e8f0`} alt="Avatar" className="w-full h-full object-cover" />
+      <div className="mb-8 rounded-[16px] border border-brand-border/40 shadow-sm bg-white overflow-hidden transition-all duration-300">
+        {/* Main profile row */}
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-brand-surface overflow-hidden border border-brand-border/60">
+              <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.full_name || 'Guest'}&backgroundColor=e2e8f0`} alt="Avatar" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-brand-primary leading-tight truncate max-w-[120px]">
+                {profile?.full_name || 'Guest User'}
+              </span>
+              <span className="text-[11px] font-semibold text-brand-neutral-dark/40 leading-tight mt-0.5">Admin</span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-bold text-brand-primary leading-tight truncate max-w-[120px]">
-              {profile?.full_name || 'Guest User'}
-            </span>
-            <span className="text-[11px] font-semibold text-brand-neutral-dark/40 leading-tight mt-0.5">Admin</span>
+          {/* Sign-out icon button — click to toggle */}
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className={`rounded-lg p-1.5 transition-colors ${isExpanded ? 'bg-red-50 text-red-500' : 'text-brand-neutral-dark/40 hover:bg-brand-surface hover:text-brand-neutral-dark/70'}`}
+            title="Sign out options"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Expandable Sign Out row — smooth max-height animation */}
+        <div
+          className="overflow-hidden transition-all duration-300 ease-in-out"
+          style={{ maxHeight: isExpanded ? '60px' : '0px' }}
+        >
+          <div className="border-t border-brand-border/30">
+            <button
+              onClick={handleSignOut}
+              className="flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Sign Out
+            </button>
           </div>
         </div>
-        <svg className="h-5 w-5 text-brand-neutral-dark/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-        </svg>
       </div>
 
       {/* Main Navigation - Vertical List */}
-      <div className="flex-1 flex flex-col gap-2 overflow-y-auto scrollbar-none pb-4">
+      <div className="flex-1 flex flex-col gap-2 overflow-y-auto min-h-0 pb-4">
         
         {/* Dashboard Block - kept large and prominent as requested */}
         <NavLink
           to="/dashboard"
           onClick={onCloseMobile}
           className={({ isActive }) =>
-            `flex items-center gap-4 h-16 px-5 mb-2 rounded-[20px] transition-transform active:scale-[0.98] ${
-              isActive || true // Keep this styling active for the main dashboard view
-                ? 'bg-[#111111] text-white shadow-md'
-                : 'bg-white text-brand-primary border border-brand-border/40 hover:bg-brand-surface'
+            `flex items-center gap-3.5 h-12 px-4 rounded-xl text-[14px] font-semibold transition-all whitespace-nowrap overflow-hidden ${
+              isActive
+                ? 'bg-brand-surface text-brand-primary'
+                : 'bg-transparent text-brand-neutral-dark/80 hover:bg-brand-surface/50 hover:text-brand-primary'
             }`
           }
         >
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
           </svg>
-          <span className="text-[14px] font-semibold">Dashboard</span>
+          <span>Dashboard</span>
         </NavLink>
 
         {/* Database Operations Links */}
