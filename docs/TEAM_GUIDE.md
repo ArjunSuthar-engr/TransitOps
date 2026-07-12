@@ -1,0 +1,206 @@
+# TransitOps Developer & AI Guide
+
+This document is the **single source of truth** for every developer and AI coding assistant working on the **TransitOps** repository.
+
+---
+
+## 🛠️ Project Stack
+
+* **Frontend**: React + TypeScript
+* **Styling**: Tailwind CSS
+* **Database & Auth**: Supabase
+* **Version Control**: GitHub
+
+---
+
+## 👥 Team Members & Responsibilities
+
+### 🎨 Developer 1: Arjun
+* **Role**: Frontend Developer & UI/UX Designer
+* **Primary Responsibilities**:
+  * Developing and styling reusable React components.
+  * Building view pages, dashboards, and managing client-side routing.
+  * Integrating frontend components with Supabase services provided by Janak.
+* **Owned Folders**:
+  * `frontend/src/pages`
+  * `frontend/src/components`
+  * `frontend/src/layouts`
+  * `frontend/src/features`
+  * `frontend/src/assets`
+* **⚠️ Restrictions**: Must **NOT** modify the `database/` folder, `supabase` schema config, or other teammates' feature folders unless coordinated.
+
+---
+
+### ⚙️ Developer 2: Janak
+* **Role**: Backend & Integration Developer
+* **Primary Responsibilities**:
+  * Writing custom backend query logic and interfacing with Supabase.
+  * Managing authentication workflows and access validation.
+  * Setting up business rules, helper utilities, and validation functions.
+* **Owned Folders**:
+  * `frontend/src/services`
+  * `frontend/src/hooks`
+  * `frontend/src/utils`
+* **⚠️ Restrictions**: Must **NOT** modify UI presentation styles or layouts unless explicitly requested by Arjun.
+
+---
+
+### 💾 Developer 3: Rajkumar
+* **Role**: Database Administrator
+* **Primary Responsibilities**:
+  * Designing tables, relationships, and index optimizations.
+  * Configuring Supabase schema and Row Level Security (RLS) policies.
+  * Preparing seed data and database migrations.
+* **Owned Folders**:
+  * `database`
+  * `supabase`
+* **⚠️ Restrictions**: Must **NOT** modify any frontend React components or layouts.
+
+---
+
+## 📂 Folder Ownership Matrix
+
+The following matrix defines editing permissions across the repository:
+
+| Folder Path | Primary Owner | Allowed Editors | Read Permission |
+| :--- | :--- | :--- | :--- |
+| `frontend/src/pages` | **Arjun** | Arjun | All |
+| `frontend/src/components`| **Arjun** | Arjun | All |
+| `frontend/src/layouts` | **Arjun** | Arjun | All |
+| `frontend/src/features` | **Arjun** | Arjun | All |
+| `frontend/src/assets` | **Arjun** | Arjun | All |
+| `frontend/src/services` | **Janak** | Janak | All (For integration) |
+| `frontend/src/hooks` | **Janak** | Janak | All |
+| `frontend/src/utils` | **Janak** | Janak | All |
+| `database` | **Rajkumar** | Rajkumar | All |
+| `supabase` | **Rajkumar** | Rajkumar | All |
+
+---
+
+## 🌿 Branch Strategy
+
+We follow a structured branch isolation model. Direct commits to `main` are strictly prohibited.
+
+```text
+main (Production Release)
+└── develop (Integration & QA)
+     ├── feature/frontend-arjun (Arjun's workspace)
+     ├── feature/backend-janak (Janak's workspace)
+     └── feature/database-rajkumar (Rajkumar's workspace)
+```
+
+* **`main`**: Production branch. Only updated via pull requests from `develop` once the build is stable.
+* **`develop`**: The integration branch. Teammates submit PRs to this branch.
+* **`feature/*`**: Dedicated personal work branches matching ownership areas.
+
+---
+
+## 🔄 Development Workflows
+
+### 📥 1. Before Starting Work
+Before writing any code, execute these steps in order:
+1. `git checkout develop`
+2. `git pull`
+3. `git checkout <your-feature-branch>` (or create it if starting a new task)
+4. `npm install` (only if new dependencies were pulled in)
+5. `npm run dev` (run the local server)
+6. Ensure the project builds and runs cleanly.
+
+### 📝 2. Git Merge Workflow
+The process to integrate feature changes safely:
+
+```mermaid
+graph TD
+    A[Feature Branch] -->|1. Commit & Verify| B(Local Commit)
+    B -->|2. Push to Remote| C(Remote Feature Branch)
+    C -->|3. Open Pull Request| D(develop Branch)
+    D -->|4. Code Review & QA| E(Merged into develop)
+    E -->|5. Production Release| F(main Branch)
+```
+----
+
+## 💬 Commit Message Convention
+
+We enforce the Conventional Commits style to preserve readable commit histories:
+
+* `feat(ui): create dashboard`
+* `feat(trips): add trip creation`
+* `fix(auth): login redirect`
+* `refactor(db): optimize schema`
+* `docs: update workflow`
+
+---
+
+## 🤖 AI Workflow
+
+Before writing any code, every AI coding assistant must:
+
+1. Read `TEAM_GUIDE.md`
+2. Read `EXECUTION_PLAN.md`
+3. Read `AGENTS.md`
+4. Determine the current developer's role and ownership.
+5. Identify the files owned by that developer.
+6. Explain the implementation plan before coding.
+7. List every file that will be modified.
+8. If any file belongs to another developer, STOP and explain why instead of modifying it.
+9. Only then begin implementation.
+
+Never immediately generate code.
+Never make assumptions about ownership.
+
+---
+
+## 🤖 Rules for AI Assistants
+
+AI assistants working on this project must adhere strictly to these operational rules:
+
+1. **Strict File Scope**: Modify **only** the files you have been explicitly requested to change.
+2. **Preserve Locations**: Never move files or folders to new locations.
+3. **No Dynamic Installs**: Never install new npm packages or devDependencies.
+4. **No Folder Renaming**: Never change naming schemas or folder architectures.
+5. **Component Reusability**: Search the `frontend/src/components` directory and reuse existing UI patterns before creating new ones.
+6. **Tailwind Framework**: Rely entirely on Tailwind CSS utility styling.
+7. **Clean Path Aliases**: Use `@/` imports for elements under the `src/` directory.
+8. **Consultation**: Ask for confirmation before editing shared backend utilities or core router patterns.
+
+## File Ownership Rule
+
+If a file belongs to another developer:
+
+- Do NOT modify it.
+- Do NOT format it.
+- Do NOT move it.
+- Do NOT rename it.
+- If changes are required, explain why and stop.
+
+Even if the AI thinks it can improve the code, it must not edit another developer's files without permission.
+
+---
+
+## ✅ Definition of Done
+
+A task is considered complete only if:
+
+- The project builds successfully.
+- There are no TypeScript errors.
+- Existing functionality still works.
+- The UI is responsive.
+- Tailwind follows project conventions.
+- Imports use the `@/` alias where applicable.
+- No unused imports remain.
+- No dead code remains.
+- No unnecessary packages were installed.
+- Changes are limited to the developer's owned files.
+- Integration points are documented if another teammate must continue the work.
+
+---
+
+## Before Every Commit
+
+Run through this checklist before staging and committing files:
+- [ ] **Builds Successfully**: Run `npm run build` locally to verify there are no bundler bugs.
+- [ ] **No TypeScript Errors**: Run typechecks to ensure type safety is maintained.
+- [ ] **No Unused Imports**: Remove dead code, unused imports, or variables.
+- [ ] **Clean Logs**: Remove debugging `console.log` statements unless they are intentional.
+- [ ] **No Credentials**: Double check that API keys, passwords, or secrets are not committed.
+- [ ] **Pull Target Branch**: Run `git pull origin develop` to resolve merge conflicts locally.
