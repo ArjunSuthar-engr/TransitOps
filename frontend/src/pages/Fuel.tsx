@@ -6,12 +6,19 @@ import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 import { fuelService } from '@/services/fuelService';
+import { vehicleService } from '@/services/vehicleService';
 
 export default function Fuel() {
   const [isOpen, setIsOpen] = useState(false);
   const [fuelLogs, setFuelLogs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [cost, setCost] = useState('');
+  const [fuelDate, setFuelDate] = useState('');
 
   const filteredFuelLogs = fuelLogs.filter(log => {
     if (!searchQuery) return true;
@@ -22,8 +29,12 @@ export default function Fuel() {
   useEffect(() => {
     const fetchFuelLogs = async () => {
       try {
-        const data = await fuelService.getAll();
-        setFuelLogs(data || []);
+        const [fuelData, vehiclesData] = await Promise.all([
+          fuelService.getAll(),
+          vehicleService.getAll()
+        ]);
+        setFuelLogs(fuelData || []);
+        setVehicles((vehiclesData || []).filter(v => v.status === 'active'));
       } catch (error) {
         console.error('Failed to fetch fuel logs:', error);
       } finally {
@@ -32,6 +43,35 @@ export default function Fuel() {
     };
     fetchFuelLogs();
   }, []);
+
+  const handleSaveLog = async () => {
+    if (!selectedVehicleId || !quantity || !cost || !fuelDate) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    try {
+      await fuelService.create({
+        vehicle_id: selectedVehicleId,
+        trip_id: null,
+        quantity_liters: Number(quantity),
+        cost: Number(cost),
+        fuel_date: fuelDate
+      });
+
+      const fuelData = await fuelService.getAll();
+      setFuelLogs(fuelData || []);
+
+      setIsOpen(false);
+      setSelectedVehicleId('');
+      setQuantity('');
+      setCost('');
+      setFuelDate('');
+    } catch (error) {
+      console.error('Failed to save fuel log:', error);
+      alert('Failed to save fuel log');
+    }
+  };
 
   const totalFuelFilled = useMemo(() => fuelLogs.reduce((acc, log) => acc + (Number(log.quantity_liters) || 0), 0), [fuelLogs]);
   const combinedSpend = useMemo(() => fuelLogs.reduce((acc, log) => acc + (Number(log.cost) || 0), 0), [fuelLogs]);
@@ -140,17 +180,31 @@ export default function Fuel() {
         footer={
           <>
             <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={() => setIsOpen(false)}>Save Log</Button>
+            <Button size="sm" onClick={handleSaveLog}>Save Log</Button>
           </>
         }
       >
         <div className="flex flex-col gap-4 font-sans">
-          <Input label="Vehicle ID / Registration" placeholder="e.g. Ford Transit (TX-402-A)" />
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Quantity (Liters)" type="number" placeholder="e.g. 50" />
-            <Input label="Cost ($)" type="number" placeholder="e.g. 75" />
+          <div className="flex flex-col gap-1.5 w-full font-sans">
+            <label className="text-xs font-semibold text-brand-neutral-dark/80 dark:text-slate-300">Vehicle</label>
+            <select
+              value={selectedVehicleId}
+              onChange={(e) => setSelectedVehicleId(e.target.value)}
+              className="w-full px-3.5 py-2.25 border border-brand-border/80 rounded-xl text-sm bg-white dark:bg-slate-950 text-brand-primary dark:text-white transition-all focus:outline-none focus:ring-2 focus:ring-brand-primary dark:focus:ring-white focus:border-transparent"
+            >
+              <option value="">Select from available vehicles</option>
+              {vehicles.map((vehicle) => (
+                <option key={vehicle.id} value={vehicle.id}>
+                  {vehicle.make} {vehicle.model} ({vehicle.registration_number})
+                </option>
+              ))}
+            </select>
           </div>
-          <Input label="Fill-up Date" type="date" />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Quantity (Liters)" type="number" placeholder="e.g. 50" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+            <Input label="Cost (₹)" type="number" placeholder="e.g. 75" value={cost} onChange={(e) => setCost(e.target.value)} />
+          </div>
+          <Input label="Fill-up Date" type="date" value={fuelDate} onChange={(e) => setFuelDate(e.target.value)} />
         </div>
       </Modal>
     </div>

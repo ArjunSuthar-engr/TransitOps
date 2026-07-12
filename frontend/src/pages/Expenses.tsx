@@ -14,6 +14,11 @@ export default function Expenses() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  
+  const [amount, setAmount] = useState('');
+  const [expenseDate, setExpenseDate] = useState('');
+  const [expenseType, setExpenseType] = useState<'fuel' | 'maintenance' | 'other'>('fuel');
+  const [description, setDescription] = useState('');
 
   const filteredExpenses = expenses.filter(expense => {
     const matchesSearch = !searchQuery || 
@@ -37,6 +42,36 @@ export default function Expenses() {
     };
     fetchExpenses();
   }, []);
+
+  const handleSaveExpense = async () => {
+    if (!amount || !expenseDate || !expenseType || !description) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    try {
+      await expenseService.create({
+        amount: Number(amount),
+        expense_date: expenseDate,
+        type: expenseType,
+        description: description,
+        trip_id: null,
+        maintenance_id: null
+      });
+
+      const data = await expenseService.getAll();
+      setExpenses(data || []);
+
+      setIsOpen(false);
+      setAmount('');
+      setExpenseDate('');
+      setExpenseType('fuel');
+      setDescription('');
+    } catch (error) {
+      console.error('Failed to save expense:', error);
+      alert('Failed to save expense');
+    }
+  };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
@@ -130,26 +165,30 @@ export default function Expenses() {
         footer={
           <>
             <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={() => setIsOpen(false)}>Save Expense</Button>
+            <Button size="sm" onClick={handleSaveExpense}>Save Expense</Button>
           </>
         }
       >
         <div className="flex flex-col gap-4 font-sans">
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Amount ($)" type="number" placeholder="e.g. 150" />
-            <Input label="Expense Date" type="date" />
+            <Input label="Amount (₹)" type="number" placeholder="e.g. 150" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Input label="Expense Date" type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} />
           </div>
           <div className="flex flex-col gap-1.5 w-full">
             <label className="text-xs font-semibold text-brand-neutral-dark/80 dark:text-slate-300">
               Expense Type
             </label>
-            <select className="w-full px-3.5 py-2.25 border border-brand-border bg-white dark:bg-slate-950 text-brand-primary dark:text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary">
+            <select 
+              className="w-full px-3.5 py-2.25 border border-brand-border bg-white dark:bg-slate-950 text-brand-primary dark:text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+              value={expenseType}
+              onChange={(e) => setExpenseType(e.target.value as 'fuel' | 'maintenance' | 'other')}
+            >
               <option value="fuel">Fuel</option>
               <option value="maintenance">Maintenance</option>
               <option value="other">Other</option>
             </select>
           </div>
-          <Input label="Description" placeholder="e.g. Depot washing supplies" />
+          <Input label="Description" placeholder="e.g. Depot washing supplies" value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
       </Modal>
     </div>

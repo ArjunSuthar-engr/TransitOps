@@ -66,6 +66,35 @@ export default function Maintenance() {
     setIsOpen(true);
   };
 
+  const handleSaveLog = async () => {
+    if (!selectedVehicleId || !serviceDescription || !serviceDate || !serviceCost) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    try {
+      await maintenanceService.create({
+        vehicle_id: selectedVehicleId,
+        description: serviceDescription,
+        cost: Number(serviceCost),
+        maintenance_date: serviceDate,
+        status: 'completed'
+      });
+
+      const logsData = await maintenanceService.getAll();
+      setMaintenanceLogs(logsData || []);
+      
+      setIsOpen(false);
+      setSelectedVehicleId('');
+      setServiceDescription('');
+      setServiceDate('');
+      setServiceCost('');
+    } catch (error) {
+      console.error('Failed to save maintenance log:', error);
+      alert('Failed to save maintenance log');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -128,7 +157,7 @@ export default function Maintenance() {
             </Button>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>Cancel</Button>
-              <Button size="sm" onClick={() => setIsOpen(false)}>Save Log</Button>
+              <Button size="sm" onClick={handleSaveLog}>Save Log</Button>
             </div>
           </div>
         }
