@@ -9,12 +9,12 @@ This is the hour-by-hour roadmap for our 8-hour hackathon. The timeline is divid
 | Phase | Time / Duration | Focus Area | Key Deliverables |
 | :--- | :--- | :--- | :--- |
 | **Phase 0** | 0:00 - 0:20 (20 mins) | Strategy & Setup | ER Diagram, DB schema design, Mock UI mapping |
-| **Phase 1** | 0:20 - 2:00 (1h 40m) | Core Foundations | DB tables & seed, Routing & Login UI, Auth backend |
-| **Phase 2** | 2:00 - 3:30 (1h 30m) | Core Models CRUD | Vehicles & Drivers CRUD, Dashboard metrics |
-| **Phase 3** | 3:30 - 5:00 (1h 30m) | Trip Dispatcher | Dispatch engine, Business validation logic |
-| **Phase 4** | 5:00 - 6:00 (1h 00m) | Expenses & Reporting | Fuel tracking, Expense models, Charts & analytics |
-| **Phase 5** | 6:00 - 7:00 (1h 00m) | Testing & Polishing | UI responsiveness, Bug patching, Dark mode styling |
-| **Phase 6** | 7:00 - 8:00 (1h 00m) | Deployment & Demo Prep| Staging deploy, Live QA, Pitch rehearsal |
+| **Phase 1** | 0:20 - 2:00 (1h 40m) | Supabase Setup & Authentication | Supabase DB tables & seed, Routing & Login UI, Supabase Auth service & hooks |
+| **Phase 2** | 2:00 - 3:30 (1h 30m) | Service Layer & CRUD UI | Vehicles & Drivers service layer methods, CRUD UI pages, Dashboard metrics |
+| **Phase 3** | 3:30 - 5:00 (1h 30m) | Business Validation & Dispatcher | Trip dispatch service methods, validation logic, conflict checks, Dispatcher panel UI |
+| **Phase 4** | 5:00 - 6:00 (1h 00m) | Expense Services & Charts | Fuel tracking & expense services, charts & cost breakdown UI |
+| **Phase 5** | 6:00 - 7:00 (1h 00m) | Integration Testing & Polish | Functional QA, Responsive UI verification, Theme toggle, Edge-case handling |
+| **Phase 6** | 7:00 - 8:00 (1h 00m) | Cloud Deployment & Demo Prep | Frontend cloud hosting (Vercel/Netlify), Live Supabase DB check, Pitch runs |
 
 ---
 
@@ -34,33 +34,33 @@ This is the hour-by-hour roadmap for our 8-hour hackathon. The timeline is divid
 
 ---
 
-### 🧱 Phase 1: Core Foundations & Authentication (Time: 0:20 - 2:00)
-* **Goal**: Build the skeletal framework of the database and frontend.
+### 🧱 Phase 1: Supabase Setup & Authentication (Time: 0:20 - 2:00)
+* **Goal**: Build the database tables and implement basic client authentication.
 * **Tasks**:
-  * **Database (Rajkumar)**:
+  * **Database & Schema (Rajkumar)**:
     - [ ] Create all base SQL tables in Supabase.
     - [ ] Write seed SQL file to populate initial database records for testing.
-  * **Frontend (Arjun)**:
+  * **Frontend & Navigation (Arjun)**:
     - [ ] Initialize the React application routing (React Router).
     - [ ] Create main layout wrappers: Sidebar, Header, and PageLayout.
     - [ ] Code the Login user interface layout.
-  * **Backend & Auth (Janak)**:
+  * **Supabase Integration & Auth (Janak)**:
     - [ ] Set up the Supabase Client connection utilities.
-    - [ ] Code the User Authentication routes (login, logout, session persistence).
+    - [ ] Code the User Authentication service (login, logout, session persistence hooks).
 * **Deliverables**:
-  * Database tables created and successfully seeded with test records.
+  * Database tables created and successfully seeded in Supabase with test records.
   * Operational local router showing Sidebar navigation.
   * Working User Login/Logout workflow linked to Supabase authentication.
 
 ---
 
-### 🚗 Phase 2: Core Models CRUD & Dashboard (Time: 2:00 - 3:30)
+### 🚗 Phase 2: Service Layer & CRUD UI (Time: 2:00 - 3:30)
 * **Goal**: Build full data tracking modules for vehicles and drivers.
 * **Tasks**:
   * **Vehicles & Drivers CRUD (Arjun + Janak)**:
     - [ ] Create frontend data grid lists for Vehicles and Drivers.
     - [ ] Implement forms for creating, updating, and removing vehicles and drivers.
-    - [ ] Connect state to Supabase query utilities (`SELECT`, `INSERT`, `UPDATE`, `DELETE`).
+    - [ ] Connect state to Supabase service layer (`getAll`, `getById`, `create`, `update`, `delete` methods).
   * **Dashboard Setup (Arjun + Rajkumar)**:
     - [ ] Setup summary KPI metrics cards (e.g., Active Drivers, Total Fleet, Idle Vehicles).
 * **Deliverables**:
@@ -70,12 +70,12 @@ This is the hour-by-hour roadmap for our 8-hour hackathon. The timeline is divid
 
 ---
 
-### 📅 Phase 3: Trip Dispatcher & Business Rules (Time: 3:30 - 5:00)
+### 📅 Phase 3: Business Validation & Dispatcher (Time: 3:30 - 5:00)
 * **Goal**: Implement trip assignments and operations flow.
 * **Tasks**:
   * **Trip Dispatch Engine (Arjun + Janak)**:
     - [ ] Build Dispatch Form to assign trips (vehicle, driver, route, schedule).
-    - [ ] Write business validations (e.g., alert if driver/vehicle is already assigned to a concurrent trip).
+    - [ ] Write service-level business validations (e.g., alert if driver/vehicle is already assigned to a concurrent trip).
   * **Maintenance Tracking (Rajkumar + Arjun)**:
     - [ ] Set up table schemas and logging interface for vehicle service histories.
 * **Deliverables**:
@@ -84,11 +84,11 @@ This is the hour-by-hour roadmap for our 8-hour hackathon. The timeline is divid
 
 ---
 
-### 📈 Phase 4: Fuel, Expenses & Reporting (Time: 5:00 - 6:00)
+### 📈 Phase 4: Expense Services & Charts (Time: 5:00 - 6:00)
 * **Goal**: Track financial costs and display operations analytics.
 * **Tasks**:
   * **Expense Tracker (Janak + Rajkumar)**:
-    - [ ] Set up database tables and API schemas for logging fuel fills and miscellaneous expenses.
+    - [ ] Set up database tables and Supabase service methods for logging fuel fills and miscellaneous expenses.
   * **Charts & Analytics (Arjun)**:
     - [ ] Implement charts (using Chart.js, Recharts, or simple SVG layouts) for operational costs over time.
 * **Deliverables**:
@@ -97,7 +97,7 @@ This is the hour-by-hour roadmap for our 8-hour hackathon. The timeline is divid
 
 ---
 
-### 💅 Phase 5: Testing, Polishing & Dark Mode (Time: 6:00 - 7:00)
+### 💅 Phase 5: Integration Testing & Polish (Time: 6:00 - 7:00)
 * **Goal**: Iron out bugs, clean styling, and improve overall UX feel.
 * **Tasks**:
   - [ ] **Cross-Browser Verification**: Check page flows on multiple viewports.
@@ -110,7 +110,7 @@ This is the hour-by-hour roadmap for our 8-hour hackathon. The timeline is divid
 
 ---
 
-### 🚀 Phase 6: Deployment & Demo Preparation (Time: 7:00 - 8:00)
+### 🚀 Phase 6: Cloud Deployment & Demo Preparation (Time: 7:00 - 8:00)
 * **Goal**: Deploy the web application and rehearse the pitch.
 * **Tasks**:
   - [ ] **Staging Deploy**: Deploy frontend to Vercel/Netlify.

@@ -6,18 +6,19 @@ This file details instructions, project setup, rules, and style guides for AI co
 
 ## Project Overview
 * **Frontend**: React (v19) + Vite + TypeScript
-* **Backend**: Express (Node.js)
-* **Database**: MySQL (using `mysql2` driver)
 * **Styling**: Tailwind CSS (v4)
-* **HTTP Client**: Axios
+* **Database & Auth**: Supabase (PostgreSQL)
+
+> [!NOTE]
+> The repository contains a `backend` folder containing an unused Express/MySQL scaffold. This is not part of the active runtime architecture and should not be modified, running, or documented as part of the live stack.
 
 ---
 
 ## Project Structure
 * **`frontend/`**: The React single-page app. Source files are under `frontend/src/` with aliases configured for `@/` pointing to `frontend/src/`.
-* **`backend/`**: Express server. Startup code is in `backend/server.js` and configurations, controllers, middleware, models, routes, and services are under `backend/src/`.
-* **`database/`**: Space reserved for MySQL database design files, schemas, and migrations.
-* **`docs/`**: Reference guides, API contracts, database structures, and prompting conventions.
+* **`supabase/`**: Local Supabase CLI configurations.
+* **`database/`**: Space reserved for Supabase schema SQL and test seed SQL files.
+* **`docs/`**: Reference guides, database structures, and prompting conventions.
 
 ---
 
@@ -26,8 +27,12 @@ This file details instructions, project setup, rules, and style guides for AI co
 * **Reuse Abstractions**: Reuse existing components, helper functions, and services before creating new ones.
 * **React**: Prefer functional React components with hooks.
 * **Path Aliases**: Always use the `@/` import alias instead of relative paths for imports under `src/` (e.g., `@/components/Navbar` instead of `../../components/Navbar`).
-* **Express Architecture**: Keep controllers thin. Extract business logic into services and database queries into models.
-* **Database Separation**: SQL access and query logic must remain separated from Express routing layers.
+* **Application Layer**: 
+  * All application and query logic lives inside:
+    - `frontend/src/services`
+    - `frontend/src/hooks`
+    - `frontend/src/utils`
+  * React components must **never** communicate directly with Supabase. They must always use the service layer.
 * **Dependencies**: Do not install new npm packages unless explicitly requested by the user.
 
 ---

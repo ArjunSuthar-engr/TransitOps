@@ -32,15 +32,15 @@ This document is the **single source of truth** for every developer and AI codin
 ---
 
 ### ⚙️ Developer 2: Janak
-* **Role**: Backend & Integration Developer
+* **Role**: Application Logic Engineer
 * **Primary Responsibilities**:
-  * Writing custom backend query logic and interfacing with Supabase.
+  * Writing custom application query logic and interfacing with Supabase.
   * Managing authentication workflows and access validation.
   * Setting up business rules, helper utilities, and validation functions.
 * **Owned Folders**:
-  * `frontend/src/services`
-  * `frontend/src/hooks`
-  * `frontend/src/utils`
+  * `frontend/src/services` (Application logic and Supabase client integration)
+  * `frontend/src/hooks` (Custom hooks for UI data binding)
+  * `frontend/src/utils` (Helper validation functions and utilities)
 * **⚠️ Restrictions**: Must **NOT** modify UI presentation styles or layouts unless explicitly requested by Arjun.
 
 ---
@@ -161,7 +161,7 @@ AI assistants working on this project must adhere strictly to these operational 
 5. **Component Reusability**: Search the `frontend/src/components` directory and reuse existing UI patterns before creating new ones.
 6. **Tailwind Framework**: Rely entirely on Tailwind CSS utility styling.
 7. **Clean Path Aliases**: Use `@/` imports for elements under the `src/` directory.
-8. **Consultation**: Ask for confirmation before editing shared backend utilities or core router patterns.
+8. **Consultation**: Ask for confirmation before editing shared service utilities or core router patterns.
 
 ## File Ownership Rule
 
