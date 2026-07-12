@@ -33,7 +33,7 @@ export default function Fuel() {
     fetchFuelLogs();
   }, []);
 
-  const totalFuelFilled = useMemo(() => fuelLogs.reduce((acc, log) => acc + (Number(log.quantity) || 0), 0), [fuelLogs]);
+  const totalFuelFilled = useMemo(() => fuelLogs.reduce((acc, log) => acc + (Number(log.quantity_liters) || 0), 0), [fuelLogs]);
   const combinedSpend = useMemo(() => fuelLogs.reduce((acc, log) => acc + (Number(log.cost) || 0), 0), [fuelLogs]);
   const avgPrice = totalFuelFilled > 0 ? (combinedSpend / totalFuelFilled).toFixed(2) : '0.00';
 
@@ -124,9 +124,9 @@ export default function Fuel() {
                 <TableCell className="font-semibold text-brand-primary dark:text-white">
                   {log.vehicle ? `${log.vehicle.make} ${log.vehicle.model} (${log.vehicle.registration_number})` : 'N/A'}
                 </TableCell>
-                <TableCell>{log.quantity} L</TableCell>
+                <TableCell>{log.quantity_liters} L</TableCell>
                 <TableCell className="font-semibold text-brand-primary dark:text-white">₹{Number(log.cost).toLocaleString('en-IN')}</TableCell>
-                <TableCell>{formatDate(log.date)}</TableCell>
+                <TableCell>{formatDate(log.fuel_date)}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="outline" size="sm">Edit</Button>
                 </TableCell>
