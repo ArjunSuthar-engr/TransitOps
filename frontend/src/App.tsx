@@ -12,7 +12,6 @@ import Maintenance from '@/pages/Maintenance';
 import Fuel from '@/pages/Fuel';
 import Expenses from '@/pages/Expenses';
 import Reports from '@/pages/Reports';
-import Settings from '@/pages/Settings';
 
 export default function App() {
   return (
@@ -36,7 +35,6 @@ export default function App() {
               <Route path="/fuel" element={<Fuel />} />
               <Route path="/expenses" element={<Expenses />} />
               <Route path="/reports" element={<Reports />} />
-              <Route path="/settings" element={<Settings />} />
               {/* Redirect root URL to dashboard */}
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Route>
