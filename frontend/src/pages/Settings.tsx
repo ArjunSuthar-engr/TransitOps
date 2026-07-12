@@ -1,4 +1,3 @@
-
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -22,8 +21,8 @@ export default function Settings() {
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-4">
-              <Input label="Full Name" defaultValue="Arjun Suthar" />
-              <Input label="Email Address" type="email" defaultValue="arjunsuthar.engr@gmail.com" disabled />
+              <Input label="Full Name" defaultValue="Fleet Operator" />
+              <Input label="Email Address" type="email" defaultValue="operator@transitops.com" disabled />
             </div>
             <Input label="Title Role" defaultValue="Operations Manager" disabled />
           </CardContent>
@@ -37,11 +36,11 @@ export default function Settings() {
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5 w-full">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <div className="flex flex-col gap-1.5 w-full font-sans">
+                <label className="text-xs font-semibold text-brand-neutral-dark/80 dark:text-slate-300">
                   Fuel Metrics Unit
                 </label>
-                <select className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-sm bg-white dark:bg-slate-955 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-950 dark:focus:ring-white">
+                <select className="w-full px-3.5 py-2.25 border border-brand-border bg-white dark:bg-slate-950 text-brand-primary dark:text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary">
                   <option value="liters">Liters (L)</option>
                   <option value="gallons">Gallons (Gal)</option>
                 </select>
