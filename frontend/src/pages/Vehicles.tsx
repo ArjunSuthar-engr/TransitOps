@@ -68,17 +68,16 @@ export default function Vehicles() {
             <TableHeaderCell>Year</TableHeaderCell>
             <TableHeaderCell>Capacity</TableHeaderCell>
             <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell className="text-right">Actions</TableHeaderCell>
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-8 text-brand-neutral-dark/60">Loading vehicles...</TableCell>
+              <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">Loading vehicles...</TableCell>
             </TableRow>
           ) : vehicles.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-8 text-brand-neutral-dark/60">No vehicles found.</TableCell>
+              <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">No vehicles found.</TableCell>
             </TableRow>
           ) : (
             vehicles.map((vehicle) => (
@@ -86,14 +85,11 @@ export default function Vehicles() {
                 <TableCell className="font-semibold text-brand-primary dark:text-white">{vehicle.registration_number}</TableCell>
                 <TableCell>{vehicle.make} {vehicle.model}</TableCell>
                 <TableCell>{vehicle.year}</TableCell>
-                <TableCell>{vehicle.capacity} seats</TableCell>
+                <TableCell>{vehicle.capacity} Tonnes</TableCell>
                 <TableCell>
                   <Badge variant={vehicle.status === 'active' ? 'success' : vehicle.status === 'in_maintenance' ? 'warning' : 'danger'}>
                     {vehicle.status ? vehicle.status.replace(/_/g, ' ') : 'Unknown'}
                   </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="outline" size="sm">Edit</Button>
                 </TableCell>
               </TableRow>
             ))
@@ -121,7 +117,7 @@ export default function Vehicles() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Input label="Year" type="number" placeholder="e.g. 2022" />
-            <Input label="Capacity (Seats)" type="number" placeholder="e.g. 12" />
+            <Input label="Capacity (Tonnes)" type="number" placeholder="e.g. 12" />
           </div>
         </div>
       </Modal>
