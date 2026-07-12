@@ -2,13 +2,9 @@ import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Table, TableHeader, TableBody, TableRow, TableHeaderCell, TableCell } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
-import { Input } from '@/components/ui/Input';
 import { tripService } from '@/services/tripService';
 
 export default function Trips() {
-  const [isOpen, setIsOpen] = useState(false);
   const [trips, setTrips] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,9 +50,8 @@ export default function Trips() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Trips Dispatch"
+        title="Trips"
         description="Monitor active vehicle runs, route schedules, and driver assignments."
-        actions={<Button size="sm" onClick={() => setIsOpen(true)}>Dispatch Run</Button>}
       />
 
       {/* Filter and Search Bar */}
@@ -100,17 +95,16 @@ export default function Trips() {
             <TableHeaderCell>Route</TableHeaderCell>
             <TableHeaderCell>Scheduled Start</TableHeaderCell>
             <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell className="text-right">Actions</TableHeaderCell>
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-brand-neutral-dark/60">Loading trips...</TableCell>
+              <TableCell colSpan={6} className="text-center py-8 text-brand-neutral-dark/60">Loading trips...</TableCell>
             </TableRow>
           ) : filteredTrips.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-brand-neutral-dark/60">No trips found.</TableCell>
+              <TableCell colSpan={6} className="text-center py-8 text-brand-neutral-dark/60">No trips found.</TableCell>
             </TableRow>
           ) : (
             filteredTrips.map((trip) => (
@@ -125,42 +119,11 @@ export default function Trips() {
                     {trip.status ? trip.status.replace(/_/g, ' ') : 'Unknown'}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="outline" size="sm">Manage</Button>
-                </TableCell>
               </TableRow>
             ))
           )}
         </TableBody>
       </Table>
-
-      {/* Dispatch Modal */}
-      <Modal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        title="Dispatch New Trip"
-        footer={
-          <>
-            <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={() => setIsOpen(false)}>Confirm Dispatch</Button>
-          </>
-        }
-      >
-        <div className="flex flex-col gap-4 font-sans">
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Vehicle ID" placeholder="e.g. Ford Transit (TX-402-A)" />
-            <Input label="Driver ID" placeholder="e.g. Marcus Vance" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Origin Location" placeholder="e.g. Depot A" />
-            <Input label="Destination Location" placeholder="e.g. North Station" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Start Time" type="time" />
-            <Input label="Est. End Time" type="time" />
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }
