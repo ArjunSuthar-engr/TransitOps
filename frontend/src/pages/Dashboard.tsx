@@ -11,6 +11,8 @@ export default function Dashboard() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrip, setSelectedTrip] = useState<any | null>(null);
+  const [showStickySearch, setShowStickySearch] = useState(false);
+  const [showStickyFilters, setShowStickyFilters] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -28,6 +30,42 @@ export default function Dashboard() {
       }
     };
     fetchDashboardData();
+
+    // Observer 1: Watch the hero search bar
+    const observer1 = new IntersectionObserver(
+      ([entry]) => {
+        // Only trigger when scrolling past the top edge
+        if (entry.boundingClientRect.top < 0) {
+          setShowStickySearch(!entry.isIntersecting);
+        } else {
+          setShowStickySearch(false);
+        }
+      },
+      { threshold: 0 }
+    );
+    
+    // Observer 2: Watch the original filters
+    const observer2 = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.boundingClientRect.top < 0) {
+          setShowStickyFilters(!entry.isIntersecting);
+        } else {
+          setShowStickyFilters(false);
+        }
+      },
+      { threshold: 0 }
+    );
+    
+    const searchSentinel = document.getElementById('search-sentinel');
+    const filtersSentinel = document.getElementById('filters-sentinel');
+    
+    if (searchSentinel) observer1.observe(searchSentinel);
+    if (filtersSentinel) observer2.observe(filtersSentinel);
+    
+    return () => {
+      observer1.disconnect();
+      observer2.disconnect();
+    };
   }, []);
 
   const filteredTrips = useMemo(() => {
@@ -91,13 +129,56 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="flex flex-col gap-8 w-full pb-10 font-sans">
+    <div className="flex flex-col gap-8 w-full pb-10 font-sans relative">
+
+      {/* ── UNIFIED FIXED STICKY HEADER ── */}
+      <div 
+        className={`fixed top-0 left-0 md:left-[260px] right-0 z-40 bg-white shadow-sm border-b border-brand-border/40 px-4 md:px-6 lg:px-8 py-3 flex items-center justify-between transition-transform duration-300 ease-in-out ${
+          showStickySearch ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        {/* Left: Search Bar */}
+        <div className="relative flex items-center w-full max-w-sm">
+          <svg className="absolute left-3 h-4 w-4 text-brand-neutral-dark/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search orders, drivers..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-1.5 bg-brand-surface border border-brand-border/60 rounded-xl focus:outline-none text-sm placeholder:text-brand-neutral-dark/50 text-brand-primary"
+          />
+        </div>
+
+        {/* Right: Filters (Appears later) */}
+        <div 
+          className={`flex items-center gap-2 overflow-x-auto transition-all duration-300 ease-in-out scrollbar-none ${
+            showStickyFilters ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none absolute right-4 md:right-8'
+          }`}
+        >
+          {FILTERS.map(f => (
+            <button
+              key={`sticky-${f.value}`}
+              onClick={() => setActiveFilter(f.value)}
+              className={`px-4 py-1.5 rounded-xl text-[12px] font-semibold shadow-sm whitespace-nowrap transition-colors ${
+                activeFilter === f.value
+                  ? 'bg-brand-primary text-white'
+                  : 'bg-white border border-brand-border/60 text-brand-neutral-dark/80 hover:bg-brand-surface'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
 
       {/* ── TOP HERO SECTION ── */}
       <div className="w-full rounded-[2rem] bg-[#F1F6F3] p-6 lg:p-8 relative shadow-sm border border-brand-border/30">
 
         {/* Search & Actions */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10 relative">
           <div className="relative w-full sm:max-w-xs flex items-center">
             <svg className="absolute left-0 h-4.5 w-4.5 text-brand-neutral-dark/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -110,6 +191,9 @@ export default function Dashboard() {
               className="w-full pl-7 pr-4 py-1.5 bg-transparent focus:outline-none text-sm font-sans placeholder:text-brand-neutral-dark/50 text-brand-primary"
             />
           </div>
+          {/* Sentinel 1: Track when hero search leaves view */}
+          <div id="search-sentinel" className="absolute top-10 h-px w-full pointer-events-none" />
+
           <div className="flex items-center gap-3 sm:gap-5">
             <button className="flex items-center gap-2 text-[13px] font-semibold text-brand-primary hover:opacity-70 transition-opacity">
               <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -226,7 +310,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── LIVE ORDERS SECTION ── */}
-      <div className="w-full">
+      <div className="w-full relative">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 px-2">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-sans font-medium text-brand-primary">Live Orders</h2>
@@ -234,6 +318,7 @@ export default function Dashboard() {
               {filteredTrips.length}
             </span>
           </div>
+          
           <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
             {FILTERS.map(f => (
               <button
@@ -250,6 +335,9 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+        
+        {/* Sentinel 2: Track when original filters leave view */}
+        <div id="filters-sentinel" className="absolute top-10 h-px w-full pointer-events-none" />
 
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-6 gap-4 px-6 py-2 text-[11px] font-semibold text-brand-neutral-dark/50">
