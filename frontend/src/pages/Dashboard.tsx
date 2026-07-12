@@ -58,25 +58,7 @@ export default function Dashboard() {
 
         const dData = await driverService.getAll();
         const available = dData.filter(d => d.status === 'available') || [];
-        // Mock first 3 as Driver 1, 2, 3 for assignment UI
-        available.forEach((d, i) => {
-          if (i < 3) {
-            d.first_name = 'Driver';
-            d.last_name = `${i + 1}`;
-          }
-        });
         setAvailableDrivers(available);
-
-        // Map trip driver names to match the mocked driver names
-        fetchedTrips = (fetchedTrips || []).map(trip => {
-          if (trip.driver_id) {
-            const mockedDriver = available.find(d => d.id === trip.driver_id);
-            if (mockedDriver && mockedDriver.first_name === 'Driver') {
-              trip.driver = { first_name: 'Driver', last_name: mockedDriver.last_name };
-            }
-          }
-          return trip;
-        });
 
         if (role === 'driver' && userDriverNum) {
           const matchingDriver = available.find(d => d.first_name === 'Driver' && d.last_name === userDriverNum);
@@ -365,24 +347,27 @@ export default function Dashboard() {
     }
   };
 
+  const handleCancelTrip = async (tripId: string) => {
+    if (!window.confirm('Are you sure you want to cancel this trip?')) return;
+    try {
+      await tripService.update(tripId, { status: 'cancelled' });
+      const fetchedTrips = await tripService.getDashboardTrips();
+      setTrips(fetchedTrips || []);
+      const updatedTrip = fetchedTrips?.find((t: any) => t.id === tripId);
+      if (updatedTrip) setSelectedTrip(updatedTrip);
+    } catch (err) {
+      console.error('Failed to cancel trip:', err);
+    }
+  };
+
   const handleAcceptTrip = async (tripId: string) => {
     if (!myDriverId) return;
     try {
       await tripService.update(tripId, { driver_id: myDriverId });
       const fetchedTrips = await tripService.getDashboardTrips();
-      // Re-apply the driver name mapping so it doesn't break UI
-      let updatedTrips = (fetchedTrips || []).map(trip => {
-        if (trip.driver_id) {
-          const mockedDriver = availableDrivers.find(d => d.id === trip.driver_id);
-          if (mockedDriver && mockedDriver.first_name === 'Driver') {
-            trip.driver = { first_name: 'Driver', last_name: mockedDriver.last_name };
-          }
-        }
-        return trip;
-      });
       // Re-filter for driver
       const userDriverNum = driverName.replace('Driver ', '');
-      updatedTrips = updatedTrips.filter(t => 
+      const updatedTrips = (fetchedTrips || []).filter(t => 
         (t.driver?.first_name === 'Driver' && t.driver?.last_name === userDriverNum) || 
         !t.driver_id
       );
@@ -1034,6 +1019,14 @@ export default function Dashboard() {
                   className="w-full py-3 rounded-2xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-colors"
                 >
                   Complete Trip
+                </button>
+              )}
+              {(role === 'dispatcher' || role === 'admin') && selectedTrip.status !== 'completed' && selectedTrip.status !== 'cancelled' && (
+                <button
+                  onClick={() => handleCancelTrip(selectedTrip.id)}
+                  className="w-full py-3 rounded-2xl bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 transition-colors"
+                >
+                  Cancel Trip
                 </button>
               )}
               <button
