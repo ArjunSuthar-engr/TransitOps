@@ -12,6 +12,39 @@ export default function Vehicles() {
   const [isOpen, setIsOpen] = useState(false);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddingDemo, setIsAddingDemo] = useState(false);
+
+  const handleAddDemoVehicle = async () => {
+    setIsAddingDemo(true);
+    try {
+      const demoVehicles = vehicles.filter(v => v.make === 'Demo');
+      let maxNum = 0;
+      demoVehicles.forEach(v => {
+        const num = parseInt(v.model.replace('Model ', ''));
+        if (!isNaN(num) && num > maxNum) maxNum = num;
+      });
+      const nextNum = maxNum + 1;
+      
+      const randomCapacity = Math.floor(Math.random() * (40 - 10 + 1) + 10);
+      
+      const newVehicle = {
+        registration_number: `DEMO-KA-${nextNum.toString().padStart(4, '0')}`,
+        make: 'Demo',
+        model: `Model ${nextNum}`,
+        year: new Date().getFullYear(),
+        capacity: randomCapacity,
+        status: 'active'
+      };
+      
+      await vehicleService.create(newVehicle);
+      const data = await vehicleService.getAll();
+      setVehicles(data || []);
+    } catch (error) {
+      console.error('Failed to add demo vehicle:', error);
+    } finally {
+      setIsAddingDemo(false);
+    }
+  };
 
   useEffect(() => {
     const fetchVehicles = async () => {
@@ -32,7 +65,14 @@ export default function Vehicles() {
       <PageHeader
         title="Vehicles Fleet"
         description="Manage vehicle specifications, active route allocations, and status tracking."
-        actions={<Button size="sm" onClick={() => setIsOpen(true)}>Add Vehicle</Button>}
+        actions={
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={handleAddDemoVehicle} disabled={isAddingDemo}>
+              {isAddingDemo ? 'Adding...' : 'Add Demo Vehicle'}
+            </Button>
+            <Button size="sm" onClick={() => setIsOpen(true)}>Add Vehicle</Button>
+          </div>
+        }
       />
 
       {/* Filter and Search Bar */}
