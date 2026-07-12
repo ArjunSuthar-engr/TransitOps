@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { TopNavbar } from '@/components/layout/TopNavbar';
@@ -6,6 +6,11 @@ import { TopNavbar } from '@/components/layout/TopNavbar';
 export function AppLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
+
+  useEffect(() => {
+    // Ensure dark mode class is stripped from HTML to lock layout in light theme
+    document.documentElement.classList.remove('dark');
+  }, []);
 
   const handleToggleMobile = () => {
     setIsMobileOpen(!isMobileOpen);
@@ -37,8 +42,8 @@ export function AppLayout() {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors">
-      {/* Desktop Sidebar (visible on md and up) */}
+    <div className="flex h-screen w-screen overflow-hidden bg-brand-bg dark:bg-slate-900 transition-colors">
+      {/* Desktop Sidebar */}
       <div className="hidden md:flex md:flex-shrink-0 h-full">
         <Sidebar />
       </div>
@@ -48,19 +53,19 @@ export function AppLayout() {
         <div className="fixed inset-0 z-40 flex md:hidden">
           {/* Backdrop overlay */}
           <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            className="fixed inset-0 bg-brand-primary/15 transition-opacity animate-in fade-in duration-150"
             onClick={() => setIsMobileOpen(false)}
           />
           {/* Drawer content */}
-          <div className="relative flex w-full max-w-xs flex-1 flex-col bg-white dark:bg-slate-950 animate-in slide-in-from-left duration-200">
-            {/* Close button in drawer header */}
-            <div className="absolute top-3 right-3 z-50">
+          <div className="relative flex w-full max-w-[240px] flex-1 flex-col bg-brand-card animate-in slide-in-from-left duration-150 shadow-lg border-r border-brand-border">
+            {/* Close button inside drawer */}
+            <div className="absolute top-4 right-4 z-50">
               <button
                 type="button"
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-850 cursor-pointer"
+                className="flex h-7.5 w-7.5 items-center justify-center rounded-lg border border-brand-border bg-brand-card text-brand-neutral-dark/80 hover:bg-brand-surface cursor-pointer"
                 onClick={() => setIsMobileOpen(false)}
               >
-                <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -70,13 +75,13 @@ export function AppLayout() {
         </div>
       )}
 
-      {/* Right Content Area */}
+      {/* Right Content Viewport Frame */}
       <div className="flex flex-1 flex-col overflow-hidden h-full">
         {/* Top Navbar */}
         <TopNavbar onMenuToggle={handleToggleMobile} title={getPageTitle(location.pathname)} />
 
-        {/* Dynamic Content Main View */}
-        <main className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-slate-900/40 p-5 md:p-6.5">
+        {/* Inner page content container */}
+        <main className="flex-1 overflow-y-auto bg-brand-surface/40 dark:bg-slate-900/40 p-5 md:p-6.5">
           <div className="mx-auto max-w-6.5xl">
             <Outlet />
           </div>
@@ -85,3 +90,4 @@ export function AppLayout() {
     </div>
   );
 }
+export default AppLayout;

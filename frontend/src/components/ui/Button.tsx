@@ -15,19 +15,19 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none cursor-pointer';
+  const baseStyles = 'inline-flex items-center justify-center font-sans font-medium rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none cursor-pointer';
   
   const variants = {
-    primary: 'bg-slate-900 text-white hover:bg-slate-800 focus:ring-slate-950 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 dark:focus:ring-white',
-    secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 focus:ring-slate-500 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 dark:focus:ring-slate-600',
-    outline: 'border border-slate-200 bg-transparent text-slate-700 hover:bg-slate-50 focus:ring-slate-500 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900',
-    destructive: 'bg-red-650 text-white hover:bg-red-600 focus:ring-red-500 dark:bg-red-750 dark:hover:bg-red-700'
+    primary: 'bg-brand-primary text-white hover:bg-brand-primary/90 focus-visible:ring-brand-primary dark:bg-white dark:text-brand-primary dark:hover:bg-slate-100 dark:focus-visible:ring-white',
+    secondary: 'bg-brand-surface text-brand-neutral-dark hover:bg-slate-100 border border-brand-border focus-visible:ring-brand-primary dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 dark:focus-visible:ring-slate-600',
+    outline: 'border border-brand-border bg-transparent text-brand-neutral-dark hover:bg-brand-surface focus-visible:ring-brand-primary dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900',
+    destructive: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500 dark:bg-red-750 dark:hover:bg-red-700'
   };
 
   const sizes = {
-    sm: 'text-xs px-3 py-1.5 gap-1.5',
-    md: 'text-sm px-4 py-2 gap-2',
-    lg: 'text-base px-5 py-2.5 gap-2.5'
+    sm: 'text-xs px-3.5 py-1.75 gap-1.5',
+    md: 'text-sm px-4.5 py-2.25 gap-2',
+    lg: 'text-base px-5.5 py-2.75 gap-2.5'
   };
 
   const spinner = (

@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/host-grotesk": "^5.2.8",
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/nunito": "^5.2.7",
     "@supabase/supabase-js": "^2.110.2",
     "@tailwindcss/vite": "^4.3.2",
     "axios": "^1.18.1",
