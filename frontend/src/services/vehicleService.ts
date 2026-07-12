@@ -3,7 +3,7 @@ import type { Vehicle } from '@/types/database';
 
 export const vehicleService = {
   getAll: async () => {
-    const { data, error } = await supabase.from('vehicles').select('*');
+    const { data, error } = await supabase.from('vehicles').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     return data as Vehicle[];
   },

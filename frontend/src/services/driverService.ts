@@ -3,7 +3,7 @@ import type { Driver } from '@/types/database';
 
 export const driverService = {
   getAll: async () => {
-    const { data, error } = await supabase.from('drivers').select('*');
+    const { data, error } = await supabase.from('drivers').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     return data as Driver[];
   },

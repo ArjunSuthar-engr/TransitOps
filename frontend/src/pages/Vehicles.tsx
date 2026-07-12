@@ -12,9 +12,15 @@ export default function Vehicles() {
   const [isOpen, setIsOpen] = useState(false);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAddingDemo, setIsAddingDemo] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+
+  const [regNum, setRegNum] = useState('');
+  const [make, setMake] = useState('');
+  const [model, setModel] = useState('');
+  const [year, setYear] = useState('');
+  const [capacity, setCapacity] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredVehicles = vehicles.filter(v => {
     const matchesSearch = v.registration_number.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -23,35 +29,55 @@ export default function Vehicles() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleAddDemoVehicle = async () => {
-    setIsAddingDemo(true);
+  const handleOpenModal = () => {
+    setRegNum('');
+    setMake('');
+    setModel('');
+    setYear(new Date().getFullYear().toString());
+    setCapacity('');
+    setIsOpen(true);
+  };
+
+  const handleFillDemoVehicle = () => {
+    const demoVehicles = vehicles.filter(v => v.make === 'Demo');
+    let maxNum = 0;
+    demoVehicles.forEach(v => {
+      const num = parseInt(v.model.replace('Model ', ''));
+      if (!isNaN(num) && num > maxNum) maxNum = num;
+    });
+    const nextNum = maxNum + 1;
+    const randomCapacity = Math.floor(Math.random() * (40 - 10 + 1) + 10);
+    
+    setRegNum(`DEMO-KA-${nextNum.toString().padStart(4, '0')}`);
+    setMake('Demo');
+    setModel(`Model ${nextNum}`);
+    setYear(new Date().getFullYear().toString());
+    setCapacity(randomCapacity.toString());
+  };
+
+  const handleAddVehicle = async () => {
+    if (!regNum || !make || !model || !year || !capacity) {
+      alert('Please fill out all fields.');
+      return;
+    }
+    setIsSubmitting(true);
     try {
-      const demoVehicles = vehicles.filter(v => v.make === 'Demo');
-      let maxNum = 0;
-      demoVehicles.forEach(v => {
-        const num = parseInt(v.model.replace('Model ', ''));
-        if (!isNaN(num) && num > maxNum) maxNum = num;
-      });
-      const nextNum = maxNum + 1;
-      
-      const randomCapacity = Math.floor(Math.random() * (40 - 10 + 1) + 10);
-      
       const newVehicle = {
-        registration_number: `DEMO-KA-${nextNum.toString().padStart(4, '0')}`,
-        make: 'Demo',
-        model: `Model ${nextNum}`,
-        year: new Date().getFullYear(),
-        capacity: randomCapacity,
-        status: 'active'
+        registration_number: regNum,
+        make,
+        model,
+        year: parseInt(year) || new Date().getFullYear(),
+        capacity: parseInt(capacity) || 0,
+        status: 'active' as const
       };
-      
       await vehicleService.create(newVehicle);
       const data = await vehicleService.getAll();
       setVehicles(data || []);
+      setIsOpen(false);
     } catch (error) {
-      console.error('Failed to add demo vehicle:', error);
+      console.error('Failed to add vehicle:', error);
     } finally {
-      setIsAddingDemo(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -74,14 +100,7 @@ export default function Vehicles() {
       <PageHeader
         title="Vehicles Fleet"
         description="Manage vehicle specifications, active route allocations, and status tracking."
-        actions={
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={handleAddDemoVehicle} disabled={isAddingDemo}>
-              {isAddingDemo ? 'Adding...' : 'Add Demo Vehicle'}
-            </Button>
-            <Button size="sm" onClick={() => setIsOpen(true)}>Add Vehicle</Button>
-          </div>
-        }
+        actions={<Button size="sm" onClick={handleOpenModal}>Add Vehicle</Button>}
       />
 
       {/* Filter and Search Bar */}
@@ -158,21 +177,55 @@ export default function Vehicles() {
         onClose={() => setIsOpen(false)}
         title="Add New Vehicle"
         footer={
-          <>
-            <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={() => setIsOpen(false)}>Add Vehicle</Button>
-          </>
+          <div className="flex w-full items-center justify-between">
+            <Button variant="outline" size="sm" onClick={handleFillDemoVehicle}>
+              Add Demo Vehicle
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>Cancel</Button>
+              <Button size="sm" onClick={handleAddVehicle} disabled={isSubmitting}>
+                {isSubmitting ? 'Adding...' : 'Add Vehicle'}
+              </Button>
+            </div>
+          </div>
         }
       >
         <div className="flex flex-col gap-4">
-          <Input label="Registration Number" placeholder="e.g. TX-402-A" />
+          <Input 
+            label="Registration Number" 
+            placeholder="e.g. TX-402-A" 
+            value={regNum}
+            onChange={(e) => setRegNum(e.target.value)}
+          />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Make" placeholder="e.g. Ford" />
-            <Input label="Model" placeholder="e.g. Transit" />
+            <Input 
+              label="Make" 
+              placeholder="e.g. Ford" 
+              value={make}
+              onChange={(e) => setMake(e.target.value)}
+            />
+            <Input 
+              label="Model" 
+              placeholder="e.g. Transit" 
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Year" type="number" placeholder="e.g. 2022" />
-            <Input label="Capacity (Tonnes)" type="number" placeholder="e.g. 12" />
+            <Input 
+              label="Year" 
+              type="number" 
+              placeholder="e.g. 2022" 
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+            />
+            <Input 
+              label="Capacity (Tonnes)" 
+              type="number" 
+              placeholder="e.g. 12" 
+              value={capacity}
+              onChange={(e) => setCapacity(e.target.value)}
+            />
           </div>
         </div>
       </Modal>
