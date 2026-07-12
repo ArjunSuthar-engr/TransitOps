@@ -154,7 +154,16 @@ export default function Maintenance() {
             placeholder="e.g. Engine oil replacement"
             value={serviceDescription}
             onChange={(e) => setServiceDescription(e.target.value)}
+            list="service-options"
           />
+          <datalist id="service-options">
+            <option value="Engine oil replacement" />
+            <option value="Routine checkup" />
+            <option value="Tire replacement" />
+            <option value="Brake pad replacement" />
+            <option value="Battery replacement" />
+            <option value="Coolant flush" />
+          </datalist>
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Service Date"
