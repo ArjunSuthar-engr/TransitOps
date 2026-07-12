@@ -13,6 +13,15 @@ export default function Vehicles() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingDemo, setIsAddingDemo] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  const filteredVehicles = vehicles.filter(v => {
+    const matchesSearch = v.registration_number.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (v.make + ' ' + v.model).toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === '' || v.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const handleAddDemoVehicle = async () => {
     setIsAddingDemo(true);
@@ -87,10 +96,16 @@ export default function Vehicles() {
             type="text"
             placeholder="Search registration or model..."
             className="w-full rounded-xl border border-brand-border bg-brand-surface/20 py-1.75 pl-8.5 pr-3 text-xs placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="flex gap-2 w-full sm:w-auto font-sans">
-          <select className="px-3.5 py-2 border border-brand-border rounded-xl text-xs bg-brand-card text-brand-neutral-dark focus:outline-none focus:ring-2 focus:ring-brand-primary font-medium">
+          <select 
+            className="px-3.5 py-2 border border-brand-border rounded-xl text-xs bg-brand-card text-brand-neutral-dark focus:outline-none focus:ring-2 focus:ring-brand-primary font-medium"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
             <option value="">All Statuses</option>
             <option value="active">Active</option>
             <option value="in_maintenance">In Maintenance</option>
@@ -115,12 +130,12 @@ export default function Vehicles() {
             <TableRow>
               <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">Loading vehicles...</TableCell>
             </TableRow>
-          ) : vehicles.length === 0 ? (
+          ) : filteredVehicles.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">No vehicles found.</TableCell>
             </TableRow>
           ) : (
-            vehicles.map((vehicle) => (
+            filteredVehicles.map((vehicle) => (
               <TableRow key={vehicle.id}>
                 <TableCell className="font-semibold text-brand-primary dark:text-white">{vehicle.registration_number}</TableCell>
                 <TableCell>{vehicle.make} {vehicle.model}</TableCell>
