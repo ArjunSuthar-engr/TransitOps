@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { tripService } from '@/services/tripService';
 import { expenseService } from '@/services/expenseService';
+import { driverService } from '@/services/driverService';
+import { vehicleService } from '@/services/vehicleService';
 import dayjs from 'dayjs';
 import { useRole } from '@/contexts/RoleContext';
 
@@ -20,6 +22,8 @@ export default function Dashboard() {
   const [newPickup, setNewPickup] = useState('');
   const [newDelivery, setNewDelivery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availableDrivers, setAvailableDrivers] = useState<any[]>([]);
+  const [availableVehicles, setAvailableVehicles] = useState<any[]>([]);
   const { role } = useRole();
 
   useEffect(() => {
@@ -32,6 +36,11 @@ export default function Dashboard() {
         setExpenses(expensesData || []);
         const total = (expensesData || []).reduce((acc, curr) => acc + Number(curr.amount), 0);
         setTotalExpenses(total);
+
+        const dData = await driverService.getAll();
+        setAvailableDrivers(dData.filter(d => d.status === 'available') || []);
+        const vData = await vehicleService.getAll();
+        setAvailableVehicles(vData.filter(v => v.status === 'active') || []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -258,6 +267,18 @@ export default function Dashboard() {
       console.error('Failed to create trip:', err);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleAssignResource = async (tripId: string, field: 'driver_id' | 'vehicle_id', value: string) => {
+    try {
+      await tripService.update(tripId, { [field]: value });
+      const fetchedTrips = await tripService.getDashboardTrips();
+      setTrips(fetchedTrips || []);
+      const updatedTrip = fetchedTrips?.find((t: any) => t.id === tripId);
+      if (updatedTrip) setSelectedTrip(updatedTrip);
+    } catch (err) {
+      console.error('Failed to assign resource:', err);
     }
   };
 
@@ -573,19 +594,37 @@ export default function Dashboard() {
 
               <div className="rounded-2xl border border-brand-border/40 p-4">
                 <p className="text-[10px] font-semibold text-brand-neutral-dark/40 uppercase tracking-wider mb-2">Assigned Driver</p>
-                <div className="flex items-center gap-3">
-                  <img
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedTrip.driver?.first_name || 'Unknown'}&backgroundColor=e2e8f0`}
-                    alt="Driver"
-                    className="h-10 w-10 rounded-full border border-brand-border/60 bg-brand-surface"
-                  />
-                  <div>
-                    <p className="text-sm font-bold text-brand-primary">
-                      {selectedTrip.driver ? `${selectedTrip.driver.first_name} ${selectedTrip.driver.last_name}` : 'Unassigned'}
-                    </p>
-                    <p className="text-[11px] text-brand-neutral-dark/50">Driver</p>
+                {selectedTrip.driver ? (
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedTrip.driver.first_name}&backgroundColor=e2e8f0`}
+                      alt="Driver"
+                      className="h-10 w-10 rounded-full border border-brand-border/60 bg-brand-surface"
+                    />
+                    <div>
+                      <p className="text-sm font-bold text-brand-primary">
+                        {`${selectedTrip.driver.first_name} ${selectedTrip.driver.last_name}`}
+                      </p>
+                      <p className="text-[11px] text-brand-neutral-dark/50">Driver</p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm font-semibold text-brand-primary">Unassigned</p>
+                    {(role === 'dispatcher' || role === 'admin') && (
+                      <select 
+                        className="w-full px-3 py-2 bg-brand-surface border border-brand-border/60 rounded-lg focus:outline-none text-xs font-semibold text-brand-primary"
+                        onChange={(e) => handleAssignResource(selectedTrip.id, 'driver_id', e.target.value)}
+                        value=""
+                      >
+                        <option value="" disabled>Select an available driver...</option>
+                        {availableDrivers.map(d => (
+                          <option key={d.id} value={d.id}>{d.first_name} {d.last_name}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="rounded-2xl border border-brand-border/40 p-4 flex flex-col gap-3">
@@ -620,13 +659,31 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {selectedTrip.vehicle && (
-                <div className="rounded-2xl border border-brand-border/40 p-4">
-                  <p className="text-[10px] font-semibold text-brand-neutral-dark/40 uppercase tracking-wider mb-2">Vehicle</p>
-                  <p className="text-sm font-bold text-brand-primary">{selectedTrip.vehicle.make} {selectedTrip.vehicle.model}</p>
-                  <p className="text-[11px] text-brand-neutral-dark/50 mt-0.5">{selectedTrip.vehicle.registration_number}</p>
-                </div>
-              )}
+              <div className="rounded-2xl border border-brand-border/40 p-4">
+                <p className="text-[10px] font-semibold text-brand-neutral-dark/40 uppercase tracking-wider mb-2">Vehicle</p>
+                {selectedTrip.vehicle ? (
+                  <>
+                    <p className="text-sm font-bold text-brand-primary">{selectedTrip.vehicle.make} {selectedTrip.vehicle.model}</p>
+                    <p className="text-[11px] text-brand-neutral-dark/50 mt-0.5">{selectedTrip.vehicle.registration_number}</p>
+                  </>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm font-semibold text-brand-primary">Unassigned</p>
+                    {(role === 'dispatcher' || role === 'admin') && (
+                      <select 
+                        className="w-full px-3 py-2 bg-brand-surface border border-brand-border/60 rounded-lg focus:outline-none text-xs font-semibold text-brand-primary"
+                        onChange={(e) => handleAssignResource(selectedTrip.id, 'vehicle_id', e.target.value)}
+                        value=""
+                      >
+                        <option value="" disabled>Select an active vehicle...</option>
+                        {availableVehicles.map(v => (
+                          <option key={v.id} value={v.id}>{v.registration_number} ({v.make} {v.model})</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="px-6 py-4 border-t border-brand-border/40">
