@@ -1,18 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
+import { maintenanceService } from '@/services/maintenanceService';
 
 export default function Maintenance() {
   const [isOpen, setIsOpen] = useState(false);
-  const mockLogs = [
-    { id: '1', vehicle: 'Ford Transit (TX-402-A)', description: 'Engine oil replacement and filter change', date: '2026-07-02', cost: '$120.00', status: 'completed' },
-    { id: '2', vehicle: 'Mercedes Benz (TX-112-C)', description: 'Brake pads replacement & rotor turning', date: '2026-07-10', cost: '$340.00', status: 'in_progress' },
-    { id: '3', vehicle: 'Volvo Coach (TX-901-B)', description: 'Transmission fluid flush and system check', date: '2026-07-25', cost: '$580.00', status: 'scheduled' }
-  ];
+  const [maintenanceLogs, setMaintenanceLogs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMaintenanceLogs = async () => {
+      try {
+        const data = await maintenanceService.getAll();
+        setMaintenanceLogs(data || []);
+      } catch (error) {
+        console.error('Failed to fetch maintenance logs:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchMaintenanceLogs();
+  }, []);
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -24,31 +46,37 @@ export default function Maintenance() {
 
       {/* Maintenance Timeline Service Cards List */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {mockLogs.map((log) => (
-          <Card key={log.id} className="hover:border-brand-primary dark:hover:border-slate-800 transition-colors flex flex-col justify-between">
-            <div>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <Badge variant={log.status === 'completed' ? 'success' : log.status === 'in_progress' ? 'warning' : 'neutral'}>
-                    {log.status.replace('_', ' ')}
-                  </Badge>
-                  <span className="text-[10px] text-brand-neutral-dark/50 font-bold font-sans">{log.date}</span>
-                </div>
-                <CardTitle className="mt-2.5 text-sm">{log.vehicle}</CardTitle>
-              </CardHeader>
-              <CardContent className="font-sans text-xs flex flex-col gap-4">
-                <p className="text-brand-neutral-dark/80 min-h-[36px] leading-relaxed">{log.description}</p>
-                <div className="flex items-center justify-between border-t border-brand-border/40 pt-3 text-[10px]">
-                  <span className="text-brand-neutral-dark/50 font-bold uppercase tracking-wider">Maintenance Cost</span>
-                  <span className="font-bold text-brand-primary text-sm">{log.cost}</span>
-                </div>
-              </CardContent>
-            </div>
-            <CardFooter className="bg-brand-surface/20">
-              <Button variant="outline" size="sm" className="w-full">Manage Service</Button>
-            </CardFooter>
-          </Card>
-        ))}
+        {isLoading ? (
+          <div className="col-span-full py-8 text-center text-brand-neutral-dark/60 font-sans text-sm">Loading maintenance logs...</div>
+        ) : maintenanceLogs.length === 0 ? (
+          <div className="col-span-full py-8 text-center text-brand-neutral-dark/60 font-sans text-sm">No maintenance logs found.</div>
+        ) : (
+          maintenanceLogs.map((log) => (
+            <Card key={log.id} className="hover:border-brand-primary dark:hover:border-slate-800 transition-colors flex flex-col justify-between">
+              <div>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <Badge variant={log.status === 'completed' ? 'success' : log.status === 'in_progress' ? 'warning' : 'neutral'}>
+                      {log.status ? log.status.replace(/_/g, ' ') : 'Unknown'}
+                    </Badge>
+                    <span className="text-[10px] text-brand-neutral-dark/50 font-bold font-sans">{formatDate(log.date)}</span>
+                  </div>
+                  <CardTitle className="mt-2.5 text-sm">{log.vehicle ? `${log.vehicle.make} ${log.vehicle.model} (${log.vehicle.registration_number})` : 'N/A'}</CardTitle>
+                </CardHeader>
+                <CardContent className="font-sans text-xs flex flex-col gap-4">
+                  <p className="text-brand-neutral-dark/80 min-h-[36px] leading-relaxed">{log.description}</p>
+                  <div className="flex items-center justify-between border-t border-brand-border/40 pt-3 text-[10px]">
+                    <span className="text-brand-neutral-dark/50 font-bold uppercase tracking-wider">Maintenance Cost</span>
+                    <span className="font-bold text-brand-primary text-sm">₹{Number(log.cost).toLocaleString('en-IN')}</span>
+                  </div>
+                </CardContent>
+              </div>
+              <CardFooter className="bg-brand-surface/20">
+                <Button variant="outline" size="sm" className="w-full">Manage Service</Button>
+              </CardFooter>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Service Logging Modal */}

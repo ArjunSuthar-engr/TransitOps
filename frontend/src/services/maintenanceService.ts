@@ -3,9 +3,12 @@ import type { MaintenanceLog } from '@/types/database';
 
 export const maintenanceService = {
   getAll: async () => {
-    const { data, error } = await supabase.from('maintenance_logs').select('*');
+    const { data, error } = await supabase.from('maintenance_logs').select(`
+      *,
+      vehicle:vehicles(registration_number, make, model)
+    `);
     if (error) throw error;
-    return data as MaintenanceLog[];
+    return data;
   },
   getById: async (id: string) => {
     const { data, error } = await supabase.from('maintenance_logs').select('*').eq('id', id).single();

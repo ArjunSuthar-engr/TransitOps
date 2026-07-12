@@ -7,6 +7,18 @@ export const tripService = {
     if (error) throw error;
     return data as Trip[];
   },
+  getDashboardTrips: async () => {
+    const { data, error } = await supabase
+      .from('trips')
+      .select(`
+        *,
+        driver:drivers(first_name, last_name),
+        vehicle:vehicles(registration_number, make, model)
+      `)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
   getById: async (id: string) => {
     const { data, error } = await supabase.from('trips').select('*').eq('id', id).single();
     if (error) throw error;

@@ -3,9 +3,12 @@ import type { FuelLog } from '@/types/database';
 
 export const fuelService = {
   getAll: async () => {
-    const { data, error } = await supabase.from('fuel_logs').select('*');
+    const { data, error } = await supabase.from('fuel_logs').select(`
+      *,
+      vehicle:vehicles(registration_number, make, model)
+    `);
     if (error) throw error;
-    return data as FuelLog[];
+    return data;
   },
   getById: async (id: string) => {
     const { data, error } = await supabase.from('fuel_logs').select('*').eq('id', id).single();

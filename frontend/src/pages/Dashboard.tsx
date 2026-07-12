@@ -1,12 +1,68 @@
+import { useEffect, useState } from 'react';
+import { tripService } from '@/services/tripService';
+import { expenseService } from '@/services/expenseService';
 
 
 export default function Dashboard() {
-  const recentOrders = [
-    { id: '#324561324', assignedTo: 'Rajesh Kumar', pickup: 'Mumbai, IN', delivery: 'Pune, IN', estDelivery: '12 Sep, 2024', status: 'Picked up', dotColor: 'bg-orange-500' },
-    { id: '#183896772', assignedTo: 'Amit Singh', pickup: 'Delhi, IN', delivery: 'Jaipur, IN', estDelivery: '14 Sep, 2024', status: 'In transit', dotColor: 'bg-green-500' },
-    { id: '#267189302', assignedTo: 'Vikram Patel', pickup: 'Bengaluru, IN', delivery: 'Chennai, IN', estDelivery: '15 Sep, 2024', status: 'Picked up', dotColor: 'bg-orange-500' },
-    { id: '#942625346', assignedTo: 'Priya Sharma', pickup: 'Hyderabad, IN', delivery: 'Ahmedabad, IN', estDelivery: '18 Sep, 2024', status: 'In transit', dotColor: 'bg-green-500' },
-  ];
+  const [trips, setTrips] = useState<any[]>([]);
+  const [totalExpenses, setTotalExpenses] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch trips with driver join
+        const fetchedTrips = await tripService.getDashboardTrips();
+        setTrips(fetchedTrips || []);
+
+        // Fetch expenses to calculate total
+        const expenses = await expenseService.getAll();
+        const total = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
+        setTotalExpenses(total);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  // Format date safely
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-500';
+      case 'in_progress': return 'bg-blue-500';
+      case 'cancelled': return 'bg-red-500';
+      case 'scheduled': default: return 'bg-orange-500';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    if (!status) return 'Unknown';
+    return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
 
   return (
     <div className="flex flex-col gap-8 w-full pb-10 font-sans">
@@ -80,7 +136,7 @@ export default function Dashboard() {
               {[40, 60, 45, 75, 45, 25, 95, 50, 65, 40, 20, 30, 45, 55, 90, 50, 40].map((h, i) => (
                 <div key={i} className="relative flex flex-col items-center group w-4">
                   {i === 6 && (
-                     <span className="absolute -top-7 text-[11px] font-bold text-brand-primary whitespace-nowrap">19 Sep</span>
+                     <span className="absolute -top-7 text-[11px] font-bold text-brand-primary whitespace-nowrap">Today</span>
                   )}
                   <div 
                     className={`w-full rounded-sm ${i === 6 ? 'bg-brand-primary' : 'bg-gradient-to-t from-brand-border/10 to-brand-border/80'}`} 
@@ -93,10 +149,10 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* RIGHT: Sales Overview */}
+          {/* RIGHT: Total Expenses Overview */}
           <div className="flex flex-col">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-base font-sans font-medium text-brand-primary">Sales Overview</h3>
+              <h3 className="text-base font-sans font-medium text-brand-primary">Total Expenses</h3>
               <div className="flex gap-2">
                 <button className="h-9 w-9 flex items-center justify-center rounded-[10px] bg-white border border-brand-border/40 shadow-sm text-brand-primary hover:bg-brand-surface">
                   <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -112,21 +168,19 @@ export default function Dashboard() {
             </div>
             
             <div className="flex items-end gap-3 mb-6">
-              <span className="text-[40px] font-sans font-medium text-brand-primary tracking-tight leading-none">₹3,65,00,000</span>
+              <span className="text-[40px] font-sans font-medium text-brand-primary tracking-tight leading-none">
+                {isLoading ? '₹...' : formatCurrency(totalExpenses)}
+              </span>
               <span className="inline-flex items-center gap-0.5 mb-1.5 px-2 py-0.5 rounded-[6px] bg-white border border-brand-border/60 text-[10px] font-bold text-brand-neutral-dark/50 shadow-sm">
-                32.2% 
-                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
-                </svg>
+                Live Data
               </span>
             </div>
 
-            {/* Sankey / Stacked Chart Mock */}
+            {/* Sankey / Stacked Chart Mock for UI Aesthetics */}
             <div className="relative h-[110px] w-full flex items-end justify-between">
-              
               {/* Column 1 */}
               <div className="flex flex-col gap-1 w-1/4 h-full justify-end relative z-10">
-                <span className="text-[10px] font-bold text-brand-primary mb-1">₹1,30,00,000</span>
+                <span className="text-[10px] font-bold text-brand-primary mb-1">Fuel</span>
                 <div className="h-3 bg-brand-neutral-dark/30 rounded-md w-full" />
                 <div className="h-4 bg-brand-neutral-dark/50 rounded-md w-full" />
                 <div className="h-7 bg-brand-neutral-dark/70 rounded-md w-full" />
@@ -142,7 +196,7 @@ export default function Dashboard() {
 
               {/* Column 2 */}
               <div className="flex flex-col gap-1 w-1/4 h-[80%] justify-end relative z-10">
-                <span className="text-[10px] font-bold text-brand-primary mb-1 text-center">₹71,50,000</span>
+                <span className="text-[10px] font-bold text-brand-primary mb-1 text-center">Maintenance</span>
                 <div className="h-2 bg-brand-neutral-dark/30 rounded-md w-full" />
                 <div className="h-3 bg-brand-neutral-dark/50 rounded-md w-full" />
                 <div className="h-5 bg-brand-neutral-dark/70 rounded-md w-full" />
@@ -158,7 +212,7 @@ export default function Dashboard() {
 
               {/* Column 3 */}
               <div className="flex flex-col gap-1 w-1/4 h-[110%] justify-end relative z-10 transform translate-y-2">
-                <span className="text-[10px] font-bold text-brand-primary mb-1 text-right">₹1,63,50,000</span>
+                <span className="text-[10px] font-bold text-brand-primary mb-1 text-right">Other</span>
                 <div className="h-5 bg-brand-neutral-dark/30 rounded-md w-full" />
                 <div className="h-5 bg-brand-neutral-dark/50 rounded-md w-full" />
                 <div className="h-9 bg-brand-neutral-dark/70 rounded-md w-full" />
@@ -168,11 +222,10 @@ export default function Dashboard() {
 
             {/* Legend */}
             <div className="flex justify-center items-center gap-4 mt-6 text-[10px] font-semibold text-brand-primary">
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-primary" />Maharashtra</div>
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-neutral-dark/70" />Delhi</div>
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-neutral-dark/50" />Karnataka</div>
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-neutral-dark/30" />Tamil Nadu</div>
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-[#D1D5DB]" />Other</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-primary" />Q1</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-neutral-dark/70" />Q2</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-neutral-dark/50" />Q3</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-brand-neutral-dark/30" />Q4</div>
             </div>
           </div>
 
@@ -187,17 +240,17 @@ export default function Dashboard() {
         {/* Table Header Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 px-2">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-sans font-medium text-brand-primary">Orders</h2>
+            <h2 className="text-xl font-sans font-medium text-brand-primary">Live Orders</h2>
             <span className="px-2.5 py-1 rounded-lg bg-white border border-brand-border/60 text-xs font-bold text-brand-neutral-dark/70 shadow-sm">
-              264
+              {trips.length}
             </span>
           </div>
           
           <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
-            <button className="px-4 py-2 rounded-xl bg-white border border-brand-border/60 text-[13px] font-semibold text-brand-neutral-dark/80 shadow-sm whitespace-nowrap hover:bg-brand-surface">Pending 70</button>
-            <button className="px-4 py-2 rounded-xl bg-white border border-brand-border/60 text-[13px] font-semibold text-brand-neutral-dark/80 shadow-sm whitespace-nowrap hover:bg-brand-surface">Responded 85</button>
-            <button className="px-4 py-2 rounded-xl bg-brand-primary text-[13px] font-semibold text-white shadow-sm whitespace-nowrap hover:bg-brand-primary/90">Assigned 53</button>
-            <button className="px-4 py-2 rounded-xl bg-white border border-brand-border/60 text-[13px] font-semibold text-brand-neutral-dark/80 shadow-sm whitespace-nowrap hover:bg-brand-surface">Completed 56</button>
+            <button className="px-4 py-2 rounded-xl bg-brand-primary text-[13px] font-semibold text-white shadow-sm whitespace-nowrap hover:bg-brand-primary/90">All</button>
+            <button className="px-4 py-2 rounded-xl bg-white border border-brand-border/60 text-[13px] font-semibold text-brand-neutral-dark/80 shadow-sm whitespace-nowrap hover:bg-brand-surface">Scheduled</button>
+            <button className="px-4 py-2 rounded-xl bg-white border border-brand-border/60 text-[13px] font-semibold text-brand-neutral-dark/80 shadow-sm whitespace-nowrap hover:bg-brand-surface">In Progress</button>
+            <button className="px-4 py-2 rounded-xl bg-white border border-brand-border/60 text-[13px] font-semibold text-brand-neutral-dark/80 shadow-sm whitespace-nowrap hover:bg-brand-surface">Completed</button>
             <button className="px-3 py-2 rounded-xl bg-white border border-brand-border/60 text-brand-primary shadow-sm hover:bg-brand-surface ml-1">
               <svg className="h-4 w-4 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -219,35 +272,43 @@ export default function Dashboard() {
           </div>
           
           {/* List Items */}
-          {recentOrders.map((order, i) => (
-            <div key={i} className="grid grid-cols-6 items-center gap-4 px-6 py-4 bg-white rounded-2xl shadow-sm border border-brand-border/30 hover:border-brand-border transition-colors">
-              <div className="text-[13px] font-bold text-brand-primary">{order.id}</div>
-              <div className="text-[13px] font-semibold text-brand-primary">{order.assignedTo}</div>
-              <div className="text-[13px] font-semibold text-brand-primary flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-brand-surface border border-brand-border/60 overflow-hidden" /> {/* Flag placeholder */}
-                {order.pickup}
-              </div>
-              <div className="text-[13px] font-semibold text-brand-primary flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-brand-surface border border-brand-border/60 overflow-hidden" /> {/* Flag placeholder */}
-                {order.delivery}
-              </div>
-              <div className="text-[13px] font-semibold text-brand-primary">{order.estDelivery}</div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`w-1.5 h-1.5 rounded-full ${order.dotColor}`} />
-                  <span className="text-[13px] font-semibold text-brand-primary">{order.status}</span>
+          {isLoading ? (
+            <div className="text-center py-10 text-sm font-semibold text-brand-neutral-dark/50">Loading orders from database...</div>
+          ) : trips.length === 0 ? (
+            <div className="text-center py-10 text-sm font-semibold text-brand-neutral-dark/50">No orders found.</div>
+          ) : (
+            trips.map((order) => (
+              <div key={order.id} className="grid grid-cols-6 items-center gap-4 px-6 py-4 bg-white rounded-2xl shadow-sm border border-brand-border/30 hover:border-brand-border transition-colors">
+                <div className="text-[13px] font-bold text-brand-primary truncate" title={order.id}>{order.id ? order.id.split('-')[0].toUpperCase() : 'N/A'}</div>
+                <div className="text-[13px] font-semibold text-brand-primary truncate">
+                  {order.driver ? `${order.driver.first_name} ${order.driver.last_name}` : 'Unassigned'}
                 </div>
-                <div className="flex gap-1.5">
-                  <button className="px-3 py-1.5 rounded-lg bg-white border border-brand-border/60 text-[11px] font-semibold text-brand-primary hover:bg-brand-surface shadow-sm">See more</button>
-                  <button className="px-2 py-1.5 rounded-lg bg-white border border-brand-border/60 text-brand-primary hover:bg-brand-surface shadow-sm flex items-center justify-center">
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                    </svg>
-                  </button>
+                <div className="text-[13px] font-semibold text-brand-primary flex items-center gap-2 truncate">
+                  <div className="w-4 h-4 rounded-full bg-brand-surface border border-brand-border/60 overflow-hidden flex-shrink-0" />
+                  <span className="truncate">{order.start_location}</span>
+                </div>
+                <div className="text-[13px] font-semibold text-brand-primary flex items-center gap-2 truncate">
+                  <div className="w-4 h-4 rounded-full bg-brand-surface border border-brand-border/60 overflow-hidden flex-shrink-0" />
+                  <span className="truncate">{order.end_location}</span>
+                </div>
+                <div className="text-[13px] font-semibold text-brand-primary">{formatDate(order.end_time || order.start_time)}</div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 flex-shrink-0 rounded-full ${getStatusColor(order.status)}`} />
+                    <span className="text-[13px] font-semibold text-brand-primary truncate">{getStatusLabel(order.status)}</span>
+                  </div>
+                  <div className="flex gap-1.5 ml-2">
+                    <button className="px-3 py-1.5 rounded-lg bg-white border border-brand-border/60 text-[11px] font-semibold text-brand-primary hover:bg-brand-surface shadow-sm whitespace-nowrap">See more</button>
+                    <button className="px-2 py-1.5 rounded-lg bg-white border border-brand-border/60 text-brand-primary hover:bg-brand-surface shadow-sm flex items-center justify-center">
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>

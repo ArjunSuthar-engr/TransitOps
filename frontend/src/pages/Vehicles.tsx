@@ -1,19 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Table, TableHeader, TableBody, TableRow, TableHeaderCell, TableCell } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
+import { vehicleService } from '@/services/vehicleService';
+import type { Vehicle } from '@/types/database';
 
 export default function Vehicles() {
   const [isOpen, setIsOpen] = useState(false);
-  const mockVehicles = [
-    { id: '1', registration_number: 'TX-402-A', make: 'Ford', model: 'Transit', year: 2021, capacity: 12, status: 'active' },
-    { id: '2', registration_number: 'TX-901-B', make: 'Volvo', model: 'Coach 9700', year: 2019, capacity: 45, status: 'active' },
-    { id: '3', registration_number: 'TX-112-C', make: 'Mercedes Benz', model: 'Sprinter', year: 2020, capacity: 15, status: 'in_maintenance' },
-    { id: '4', registration_number: 'TX-504-D', make: 'Chevrolet', model: 'Express', year: 2018, capacity: 12, status: 'out_of_service' }
-  ];
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      try {
+        const data = await vehicleService.getAll();
+        setVehicles(data || []);
+      } catch (error) {
+        console.error('Failed to fetch vehicles:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchVehicles();
+  }, []);
 
   return (
     <div className="flex flex-col gap-6">
@@ -60,22 +72,32 @@ export default function Vehicles() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {mockVehicles.map((vehicle) => (
-            <TableRow key={vehicle.id}>
-              <TableCell className="font-semibold text-brand-primary dark:text-white">{vehicle.registration_number}</TableCell>
-              <TableCell>{vehicle.make} {vehicle.model}</TableCell>
-              <TableCell>{vehicle.year}</TableCell>
-              <TableCell>{vehicle.capacity} seats</TableCell>
-              <TableCell>
-                <Badge variant={vehicle.status === 'active' ? 'success' : vehicle.status === 'in_maintenance' ? 'warning' : 'danger'}>
-                  {vehicle.status.replace('_', ' ')}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <Button variant="outline" size="sm">Edit</Button>
-              </TableCell>
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-8 text-brand-neutral-dark/60">Loading vehicles...</TableCell>
             </TableRow>
-          ))}
+          ) : vehicles.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-8 text-brand-neutral-dark/60">No vehicles found.</TableCell>
+            </TableRow>
+          ) : (
+            vehicles.map((vehicle) => (
+              <TableRow key={vehicle.id}>
+                <TableCell className="font-semibold text-brand-primary dark:text-white">{vehicle.registration_number}</TableCell>
+                <TableCell>{vehicle.make} {vehicle.model}</TableCell>
+                <TableCell>{vehicle.year}</TableCell>
+                <TableCell>{vehicle.capacity} seats</TableCell>
+                <TableCell>
+                  <Badge variant={vehicle.status === 'active' ? 'success' : vehicle.status === 'in_maintenance' ? 'warning' : 'danger'}>
+                    {vehicle.status ? vehicle.status.replace(/_/g, ' ') : 'Unknown'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button variant="outline" size="sm">Edit</Button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
 

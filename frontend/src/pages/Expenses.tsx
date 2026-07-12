@@ -1,18 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Table, TableHeader, TableBody, TableRow, TableHeaderCell, TableCell } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
+import { expenseService } from '@/services/expenseService';
+import type { Expense } from '@/types/database';
 
 export default function Expenses() {
   const [isOpen, setIsOpen] = useState(false);
-  const mockExpenses = [
-    { id: '1', type: 'fuel', amount: '$270.00', date: '2026-07-10', description: 'Refueling for Volvo Coach' },
-    { id: '2', type: 'maintenance', amount: '$340.00', date: '2026-07-10', description: 'Mercedes Benz brake pads service' },
-    { id: '3', type: 'other', amount: '$45.00', date: '2026-07-08', description: 'Depot washing supplies' }
-  ];
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      try {
+        const data = await expenseService.getAll();
+        setExpenses(data || []);
+      } catch (error) {
+        console.error('Failed to fetch expenses:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchExpenses();
+  }, []);
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -58,21 +81,31 @@ export default function Expenses() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {mockExpenses.map((expense) => (
-            <TableRow key={expense.id}>
-              <TableCell>
-                <Badge variant={expense.type === 'fuel' ? 'info' : expense.type === 'maintenance' ? 'warning' : 'neutral'}>
-                  {expense.type}
-                </Badge>
-              </TableCell>
-              <TableCell className="font-semibold text-brand-primary dark:text-white">{expense.amount}</TableCell>
-              <TableCell>{expense.date}</TableCell>
-              <TableCell>{expense.description}</TableCell>
-              <TableCell className="text-right">
-                <Button variant="outline" size="sm">Edit</Button>
-              </TableCell>
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">Loading expenses...</TableCell>
             </TableRow>
-          ))}
+          ) : expenses.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center py-8 text-brand-neutral-dark/60">No expenses found.</TableCell>
+            </TableRow>
+          ) : (
+            expenses.map((expense) => (
+              <TableRow key={expense.id}>
+                <TableCell>
+                  <Badge variant={expense.category === 'fuel' ? 'info' : expense.category === 'maintenance' ? 'warning' : 'neutral'}>
+                    {expense.category ? expense.category.replace(/_/g, ' ') : 'unknown'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-semibold text-brand-primary dark:text-white">₹{Number(expense.amount).toLocaleString('en-IN')}</TableCell>
+                <TableCell>{formatDate(expense.date)}</TableCell>
+                <TableCell>{expense.description}</TableCell>
+                <TableCell className="text-right">
+                  <Button variant="outline" size="sm">Edit</Button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
 
