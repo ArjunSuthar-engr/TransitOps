@@ -93,12 +93,12 @@ export default function Expenses() {
             expenses.map((expense) => (
               <TableRow key={expense.id}>
                 <TableCell>
-                  <Badge variant={expense.category === 'fuel' ? 'info' : expense.category === 'maintenance' ? 'warning' : 'neutral'}>
-                    {expense.category ? expense.category.replace(/_/g, ' ') : 'unknown'}
+                  <Badge variant={expense.type === 'fuel' ? 'info' : expense.type === 'maintenance' ? 'warning' : 'neutral'}>
+                    {expense.type ? expense.type.replace(/_/g, ' ') : 'unknown'}
                   </Badge>
                 </TableCell>
                 <TableCell className="font-semibold text-brand-primary dark:text-white">₹{Number(expense.amount).toLocaleString('en-IN')}</TableCell>
-                <TableCell>{formatDate(expense.date)}</TableCell>
+                <TableCell>{formatDate(expense.expense_date)}</TableCell>
                 <TableCell>{expense.description}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="outline" size="sm">Edit</Button>
