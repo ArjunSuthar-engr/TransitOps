@@ -120,12 +120,13 @@ export default function Dashboard() {
 
   // ── DYNAMIC DATA CALCULATIONS ── //
 
-  // Fulfillment Performance: completed trips as a share of all trips in the last 17 days.
+  // Fulfillment Performance: completed trips and total trips in the last 17 days.
   const performanceData = useMemo(() => {
     const days = Array.from({ length: 17 }, (_, index) => {
       const date = dayjs().startOf('day').subtract(16 - index, 'day');
       return {
         date,
+        label: date.format('D'),
         total: 0,
         completed: 0,
       };
@@ -144,11 +145,21 @@ export default function Dashboard() {
       }
     });
 
-    return days.map(day => {
-      if (day.total === 0) return 0;
-      return Math.round((day.completed / day.total) * 100);
-    });
+    return days.map(day => ({
+      ...day,
+      rate: day.total > 0 ? Math.round((day.completed / day.total) * 100) : 0,
+    }));
   }, [trips]);
+
+  const fulfillmentSummary = useMemo(() => {
+    const completed = performanceData.reduce((sum, day) => sum + day.completed, 0);
+    const total = performanceData.reduce((sum, day) => sum + day.total, 0);
+    return {
+      completed,
+      total,
+      rate: total > 0 ? Math.round((completed / total) * 100) : 0,
+    };
+  }, [performanceData]);
 
   // Expenses by rolling month and category
   const expenseData = useMemo(() => {
@@ -685,9 +696,12 @@ export default function Dashboard() {
           <div className="flex flex-col">
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-base font-sans font-medium text-brand-primary">Fulfillment Performance</h3>
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-brand-border/60 bg-white px-2 py-1 text-[10px] font-bold text-brand-neutral-dark/60 shadow-sm">
+                {fulfillmentSummary.rate}% fulfilled · {fulfillmentSummary.completed}/{fulfillmentSummary.total || 0}
+              </span>
             </div>
             <p className="mb-5 text-[11px] font-medium text-brand-neutral-dark/50">
-              Completed trips as a share of total trips for each of the last 17 days.
+              Trip completion and load volume for each of the last 17 days.
             </p>
             <div className="relative h-48 w-full flex items-end justify-between px-2">
               <div className="absolute inset-0 flex flex-col justify-between pointer-events-none z-0">
@@ -695,24 +709,32 @@ export default function Dashboard() {
                 <div className="w-full border-t border-brand-border/50 border-dashed flex justify-end"><span className="text-[10px] text-brand-neutral-dark/40 font-semibold transform -translate-y-1/2 bg-[#F1F6F3] pl-2">50%</span></div>
                 <div className="w-full border-t border-brand-border/50 flex justify-end"><span className="text-[10px] text-brand-neutral-dark/40 font-semibold transform -translate-y-1/2 bg-[#F1F6F3] pl-2">0%</span></div>
               </div>
-              {performanceData.map((h, i) => {
-                const isToday = i === performanceData.length - 1;
-                const totalTrips = trips.filter(trip => trip.start_time && dayjs(trip.start_time).startOf('day').isSame(dayjs().startOf('day').subtract(16 - i, 'day'), 'day')).length;
-                const completedTrips = trips.filter(trip => trip.start_time && trip.status === 'completed' && dayjs(trip.start_time).startOf('day').isSame(dayjs().startOf('day').subtract(16 - i, 'day'), 'day')).length;
+              {(() => {
+                const maxTotal = Math.max(...performanceData.map(day => day.total), 1);
 
-                return (
-                <div key={i} className="relative flex flex-col items-center group w-4 h-full justify-end z-10">
-                  {isToday && <span className="absolute -top-7 text-[11px] font-bold text-brand-primary whitespace-nowrap">Today</span>}
-                  <span className={`text-[9px] font-bold mb-1 ${isToday ? 'text-brand-primary' : 'text-brand-neutral-dark/40'}`}>{h}%</span>
-                  <span className={`absolute -bottom-5 text-[8px] font-semibold whitespace-nowrap ${isToday ? 'text-brand-primary' : 'text-brand-neutral-dark/30'}`}>
-                    {totalTrips > 0 ? `${completedTrips}/${totalTrips}` : '0'}
-                  </span>
-                  <div className={`w-full rounded-sm transition-all duration-700 ease-out ${isToday ? 'bg-brand-primary' : 'bg-gradient-to-t from-brand-border/10 to-brand-border/80'}`} style={{ height: `${h}%` }}>
-                    {!isToday && <div className="h-0.5 w-full bg-brand-neutral-dark/60 rounded-t-sm" />}
-                  </div>
-                </div>
-                );
-              })}
+                return performanceData.map((day, i) => {
+                  const isToday = i === performanceData.length - 1;
+                  const totalHeight = day.total > 0 ? Math.max(8, Math.round((day.total / maxTotal) * 100)) : 0;
+                  const completedHeight = day.total > 0 ? Math.max(4, Math.round((day.completed / day.total) * totalHeight)) : 0;
+                  const pendingHeight = Math.max(totalHeight - completedHeight, 0);
+
+                  return (
+                    <div key={day.date.format('YYYY-MM-DD')} className="relative flex flex-col items-center group w-4 h-full justify-end z-10">
+                      {isToday && <span className="absolute -top-7 text-[11px] font-bold text-brand-primary whitespace-nowrap">Today</span>}
+                      <span className={`text-[9px] font-bold mb-1 ${isToday ? 'text-brand-primary' : 'text-brand-neutral-dark/40'}`}>
+                        {day.total > 0 ? `${day.completed}/${day.total}` : '0'}
+                      </span>
+                      <div className="w-full flex flex-col justify-end rounded-sm overflow-hidden transition-all duration-700 ease-out bg-brand-border/20" style={{ height: `${totalHeight}%` }}>
+                        {pendingHeight > 0 && <div className="w-full bg-brand-border/30" style={{ height: `${pendingHeight}%` }} />}
+                        {completedHeight > 0 && <div className="w-full bg-brand-primary" style={{ height: `${completedHeight}%` }} />}
+                      </div>
+                      <span className={`absolute -bottom-5 text-[8px] font-semibold whitespace-nowrap ${isToday ? 'text-brand-primary' : 'text-brand-neutral-dark/30'}`}>
+                        {day.label}
+                      </span>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
 
