@@ -165,29 +165,35 @@ export default function Dashboard() {
 
   // ── DYNAMIC DATA CALCULATIONS ── //
 
-  // Fulfillment Performance: 17 days (6 past, today, 10 future)
+  // Fulfillment Performance: completed trips as a share of all trips in the last 17 days.
   const performanceData = useMemo(() => {
-    if (!liveTrips.length) return Array(17).fill(5);
+    const days = Array.from({ length: 17 }, (_, index) => {
+      const date = dayjs().startOf('day').subtract(16 - index, 'day');
+      return {
+        date,
+        total: 0,
+        completed: 0,
+      };
+    });
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    trips.forEach(trip => {
+      if (!trip.start_time) return;
 
-    const counts = Array(17).fill(0);
+      const tripDate = dayjs(trip.start_time).startOf('day');
+      const dayIndex = days.findIndex(day => day.date.isSame(tripDate, 'day'));
+      if (dayIndex === -1) return;
 
-    liveTrips.forEach(t => {
-      if (!t.start_time) return;
-      const d = new Date(t.start_time);
-      d.setHours(0, 0, 0, 0);
-      const diffDays = Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      const index = 6 + diffDays;
-      if (index >= 0 && index < 17) {
-        counts[index]++;
+      days[dayIndex].total += 1;
+      if (trip.status === 'completed') {
+        days[dayIndex].completed += 1;
       }
     });
 
-    const max = Math.max(...counts, 1);
-    return counts.map(c => (c === 0 ? 5 : Math.max(10, Math.round((c / max) * 100))));
-  }, [liveTrips]);
+    return days.map(day => {
+      if (day.total === 0) return 0;
+      return Math.round((day.completed / day.total) * 100);
+    });
+  }, [trips]);
 
   // Expenses by Quarter and Category
   const expenseData = useMemo(() => {
