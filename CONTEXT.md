@@ -7,11 +7,23 @@
 
 ---
 
+## 🏗️ Current Architecture
+
+```text
+React
+  ↓
+Service Layer
+  ↓
+Supabase (Auth + PostgreSQL + RLS)
+```
+
+---
+
 ## ✅ Completed Features
 
-- [x] Initial SERN Project Scaffold (React + Express + MySQL skeleton, Git config)
-- [x] Folder Refactoring (Backend controllers/routes structures & frontend modular design)
-- [x] Dependency Installation (Tailwind CSS v4, Axios, nodemon, React Router DOM, cors, dotenv, mysql2)
+- [x] Initial Project Scaffold (React + Supabase configuration, Git config)
+- [x] Folder Refactoring (Frontend modular design & service layer setup)
+- [x] Dependency Installation (Tailwind CSS v4, React Router DOM, Supabase JS, TypeScript)
 - [x] TS Path Aliases Config (`@/*` mapping to `src/*`)
 - [x] Team Documentation (`docs/TEAM_GUIDE.md`, `docs/EXECUTION_PLAN.md`, `AGENTS.md`)
 
@@ -31,11 +43,39 @@
 
 ## 🚧 Currently In Progress
 
-* **Developer**: Janak (Backend & Integration Developer)
+* **Developer**: Janak (Application Logic Engineer)
 * **Current Task**: Implemented Supabase Client, Authentication hooks, CRUD Services, and Business Rules.
 * **Current Branch**: `feature/backend-janak`
 * **Files Being Modified**: `frontend/src/services/`, `frontend/src/hooks/`, `frontend/src/utils/`, `frontend/src/types/`
 * **Expected Output**: Reusable services and hooks ready for UI integration by Arjun.
+
+---
+
+## 👥 Team Responsibilities
+
+* **Arjun**
+  * Frontend
+  * UI
+  * Pages
+  * Components
+  * Layouts
+
+* **Janak**
+  * Application Logic
+  * Supabase Integration
+  * Authentication
+  * Services
+  * Hooks
+  * Utilities
+  * Business Rules
+
+* **Rajkumar**
+  * Database
+  * Supabase
+  * Deployment
+  * Environment
+  * Seed Data
+  * RLS
 
 ---
 
@@ -44,7 +84,7 @@
 1. **Phase 1 Foundations**:
    * **Rajkumar**: Create base Supabase tables and write test seed SQL files.
    * **Arjun**: Configure frontend routes and main layout shells (Sidebar, Header, Layout).
-   * **Janak**: Configure Supabase client utilities and write JWT/Session authentication handlers.
+   * **Janak**: Configure Supabase client utilities and write authentication/session handlers.
 
 ---
 
@@ -58,9 +98,9 @@
 
 ## 🔗 Integration Notes
 
-TransitOps will transition to a frontend-to-Supabase direct client architecture:
+TransitOps uses a frontend-to-Supabase direct client architecture:
 1. **Frontend UI** ([`frontend/`](file:///c:/Users/Janak/Documents/Arjun/hackathon-project/frontend)): Built with React, TypeScript, and Tailwind CSS.
-2. **Backend Services & Client** ([`frontend/src/services/`](file:///c:/Users/Janak/Documents/Arjun/hackathon-project/frontend/src/services)): Uses Supabase JS Client for auth sessions, custom validation hooks, and direct PostgreSQL CRUD actions.
+2. **Service Layer** ([`frontend/src/services/`](file:///c:/Users/Janak/Documents/Arjun/hackathon-project/frontend/src/services)): Uses Supabase JS Client for auth sessions, custom validation hooks, and direct PostgreSQL CRUD actions.
 3. **Database** ([`database/`](file:///c:/Users/Janak/Documents/Arjun/hackathon-project/database) & Supabase dashboard): SQL tables protected by Row Level Security (RLS) policies.
 
 ---
@@ -93,5 +133,5 @@ Every AI assistant working on this project must:
 ## 📅 Last Updated
 
 * **Developer**: Janak
-* **Time**: 2026-07-12T09:27:00+05:30
-* **Summary of changes**: Implemented Supabase client, authentication logic/hooks, CRUD services, business rules, and generated TypeScript types.
+* **Time**: 2026-07-12T09:42:00+05:30
+* **Summary of changes**: Updated project status documentation to reflect React + Supabase direct client architecture and revised team assignments.
